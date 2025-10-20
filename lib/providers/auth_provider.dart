@@ -1,0 +1,1 @@
+// Se encarga del estado dentro de la app. Guarda los datos en memoria, notifica a la UI cuando cambian y usa los services para obtenerlos.

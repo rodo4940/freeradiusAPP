@@ -40,34 +40,35 @@ class DrawerWidget extends StatelessWidget {
             Expanded(
               //ocupa todo el espacio disponible que le queda (felx-grow)
               child: ListView(
-                physics: const NeverScrollableScrollPhysics(), //Evita scroll
+                // physics: const NeverScrollableScrollPhysics(), //Evita scroll
                 padding: EdgeInsets.zero,
                 children: [
                   ListTile(
                     leading: const HeroIcon(HeroIcons.home),
                     title: const Text("Dasboard"),
-                    onTap: () => Navigator.pushNamed(context, '/home'),
+                    onTap: () => Navigator.pushReplacementNamed(context, '/home'),
                     
                   ),
                   ListTile(
                     leading: const HeroIcon(HeroIcons.userGroup),
                     title: const Text("Usuarios PPPoE"),
-                    onTap: () => Navigator.pushNamed(context, '/pppoe_users'),
+                    onTap: () => Navigator.pushReplacementNamed(context, '/pppoe_users'),
                   ),
                   ListTile(
                     leading: const HeroIcon(HeroIcons.server),
                     title: const Text("NAS/Routers"),
-                    onTap: () => Navigator.pushNamed(context,'/nas'),
+                    onTap: () => Navigator.pushReplacementNamed(context,'/nas'),
                   ),
                   ListTile(
                     leading: const HeroIcon(HeroIcons.circleStack),
                     title: const Text("Base de Datos"),
-                    onTap: () => Navigator.pushNamed(context,'/database'),
+                    onTap: () => Navigator.pushReplacementNamed(context,'/database'),
                   ),
                   ListTile(
                     leading: const HeroIcon(HeroIcons.commandLine),
                     title: const Text("Estado RADIUS"),
-                    onTap: () => Navigator.pushNamed(context,'/radius_status'),
+                    
+                    onTap: () => Navigator.pushReplacementNamed(context, '/radius_status'),
                   ),
                 ],
               ),
@@ -76,7 +77,7 @@ class DrawerWidget extends StatelessWidget {
             ListTile(
               leading: const HeroIcon(HeroIcons.documentText),
               title: const Text("Manual de Usuario"),
-              onTap: () => Navigator.pushNamed(context,'/user_guide'),
+              onTap: () => Navigator.pushReplacementNamed(context,'/user_guide'),
             ),
           ],
         ),
