@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:freeradius_app/theme/app_theme.dart';
 import 'package:heroicons/heroicons.dart';
 
 class Login extends StatelessWidget {
@@ -19,7 +20,7 @@ class Login extends StatelessWidget {
                       width: 64,
                       height: 64,
                       decoration: BoxDecoration(
-                        color: Colors.orange,
+                        color: AppTheme.brandPrimary,
                         shape: BoxShape.circle,
                       ),
                       child: HeroIcon(
@@ -59,9 +60,9 @@ class Login extends StatelessWidget {
                     TextField(
                       decoration: const InputDecoration(
                         prefixIcon: HeroIcon(HeroIcons.user),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
-                        ),
+                        // border: OutlineInputBorder(
+                        //   borderRadius: BorderRadius.all(Radius.circular(8)),
+                        // ),
                         hintText: 'Ingrese tu Usuario',
                       ),
                     ),
@@ -77,9 +78,9 @@ class Login extends StatelessWidget {
                       decoration: const InputDecoration(
                         prefixIcon: HeroIcon(HeroIcons.lockClosed),
                         suffixIcon: HeroIcon(HeroIcons.eye),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
-                        ),
+                        // border: OutlineInputBorder(
+                        //   borderRadius: BorderRadius.all(Radius.circular(8)),
+                        // ),
                         hintText: 'Ingrese tu Usuario',
                       ),
                     ),
@@ -88,17 +89,15 @@ class Login extends StatelessWidget {
                 const SizedBox(height: 18),
                 SizedBox(
                   width: double.infinity,
-                  child: TextButton(
-                    style: TextButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      // foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      // backgroundColor: Colors.orange,
+                      // padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
-                    onPressed: () {},
-                    child: Text("Iniciar Sesion",style: TextStyle(fontSize: 18)),
+                    onPressed: () {
+                      Navigator.pushReplacementNamed(context,'/home');
+                    },
+                    child: Text("Iniciar Sesion"),
                   ),
                 ),
               ],
