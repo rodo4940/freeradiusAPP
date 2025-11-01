@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:freeradius_app/theme/app_theme.dart';
 import 'package:heroicons/heroicons.dart';
+
 
 class Login extends StatelessWidget {
   const Login({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);//Obtiene el tema activo actualmente (C o oscuro)
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -20,13 +21,17 @@ class Login extends StatelessWidget {
                       width: 64,
                       height: 64,
                       decoration: BoxDecoration(
-                        color: AppTheme.brandPrimary,
+                        color: theme.colorScheme.primary,//Segun el tema aplica el color primario definido en 
                         shape: BoxShape.circle,
                       ),
                       child: HeroIcon(
                         HeroIcons.wifi,
                         size: 36,
-                        color: Colors.white,
+                        color: theme.colorScheme.onPrimary,
+                        // Cambiar color de acuerdo al tema
+                          // color: Theme.of(context).brightness == Brightness.dark
+                          //       ? Colors.white
+                          //       : Colors.black,
                       ),
                     ),
                     Text(
@@ -91,6 +96,9 @@ class Login extends StatelessWidget {
                   width: double.infinity,
                   child: FilledButton(
                     style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       // backgroundColor: Colors.orange,
                       // padding: const EdgeInsets.symmetric(vertical: 12),
                     ),

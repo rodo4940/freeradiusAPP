@@ -7,6 +7,7 @@ class Nas extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
     // Datos dummy para mostrar
     final nasList = [
@@ -66,6 +67,7 @@ class Nas extends StatelessWidget {
       },
     ];
     return Scaffold(
+      backgroundColor: colors.surface,
       appBar: AppBar(title: const Text('NAS / Routers')),
       drawer: const DrawerWidget(),
       body: Padding(

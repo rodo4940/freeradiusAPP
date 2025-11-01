@@ -38,7 +38,7 @@ class _RadiusStatusState extends State<RadiusStatus> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Estado RADIUS'),
-        backgroundColor: AppTheme.brandDark,
+        backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -160,7 +160,7 @@ class _RadiusStatusState extends State<RadiusStatus> {
           children: [
             Row(
               children: [
-                HeroIcon(icon, color: AppTheme.brandDark),
+                HeroIcon(icon, color: AppTheme.darkBg),
                 const SizedBox(width: 12),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,7 +170,7 @@ class _RadiusStatusState extends State<RadiusStatus> {
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.brandDark,
+                        color: AppTheme.darkBg,
                       ),
                     ),
                     if (subtitle != null)
@@ -199,7 +199,7 @@ class _RadiusStatusState extends State<RadiusStatus> {
   }) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(vertical: 4),
-      leading: HeroIcon(leadingIcon, color: AppTheme.brandPrimary),
+      leading: HeroIcon(leadingIcon, color: AppTheme.primary),
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

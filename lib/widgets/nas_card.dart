@@ -20,14 +20,16 @@ class NasCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
+      color: theme.colorScheme.surfaceContainer,
+      // shadowColor: theme.colorScheme.tertiary,
       // margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListTile(
         //Todos los widgets tiene ya estructura definida
-        leading: HeroIcon(HeroIcons.server), //Widget al inicio
+        leading: HeroIcon(HeroIcons.server,size: 30), //Widget al inicio
         title: Text(
           name, 
           style: theme.textTheme.titleMedium?.copyWith(
-            color: theme.colorScheme.primary,//Segun Modo Claro u Oscuro
+            color: theme.colorScheme.tertiary//Segun Modo Claro u Oscuro
           )),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

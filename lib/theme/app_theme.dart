@@ -1,160 +1,94 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Paleta de colores base
-  static const Color brandPrimary = Color(0xFFF27D16);
-  static const Color brandSecondary = Color(0xFFF29544);
-  static const Color brandBlue = Color(0xFF8CB6DE);
-  static const Color brandGreen = Color(0xFFCEEDE8);
-  static const Color brandDark = Color(0xFF445C73);
+  static const Color primary = Color(0xFFFB8500);
+  static const Color tertiary = Color(0xFFFFB703);
+  static const Color darkBg = Color(0xFF023047);
+  static const Color accent = Color(0xFF219EBC);
+  static const Color lightBg = Color(0xFF8ECAE6);
 
-  static ThemeData light = _buildLightTheme();
-  static ThemeData dark = _buildDarkTheme();
-
-  // Tema claro
-  static ThemeData _buildLightTheme() {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: brandPrimary,
-      brightness: Brightness.light,
-    );
-
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: scheme,
-      scaffoldBackgroundColor: Colors.white,
-
-      // Tipografía general
-      textTheme: TextTheme(
-        // Título principal (AppBar o encabezados grandes)
-        titleLarge: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-          color: scheme.onSurface,
+  static final ThemeData light = ThemeData(
+    useMaterial3: true,
+    brightness: Brightness.light,
+    colorScheme: ColorScheme.light(
+    primary: Color(0xFFFB8500),    // naranja → botones principales
+    onPrimary: Colors.white,
+    secondary: Color(0xFF219EBC),  // azul → botones secundarios / acentos
+    onSecondary: Colors.white,
+    tertiary: Color(0xFFFFB703),   // amarillo → highlights, iconos, hover
+    onTertiary: Colors.black,
+    surface: Colors.white,
+    onSurface: Colors.black87,
+    ),
+    // scaffoldBackgroundColor: Colors.white,
+    textTheme: const TextTheme(
+      titleLarge: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+      titleMedium: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+      bodyMedium: TextStyle(fontSize: 16),
+      bodySmall: TextStyle(fontSize: 14),
+    ),
+    // Inputs
+    inputDecorationTheme: InputDecorationTheme(
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: primary, width: 2),
+      ),
+      labelStyle: const TextStyle(color: Colors.black87),
+      hintStyle: const TextStyle(color: Colors.black54),
+    ),
+    // Botones
+    filledButtonTheme: FilledButtonThemeData(
+      style: ButtonStyle(
+        padding: WidgetStateProperty.all(
+          const EdgeInsets.symmetric(vertical: 12),
         ),
-        // Título medio (ListTile.title, encabezados de cards)
-        titleMedium: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: scheme.onSurface,
-        ),
-        // Texto medio (descripciones o información secundaria)
-        bodyMedium: TextStyle(
-          fontSize: 16,
-          color: scheme.onSurfaceVariant,
-        ),
-        // Texto pequeño (detalles o etiquetas)
-        bodySmall: TextStyle(
-          fontSize: 14,
-          color: scheme.onSurfaceVariant,
+        shape: WidgetStateProperty.all(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
+    ),
+  );
 
-      // Botones principales
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          backgroundColor: brandPrimary,
-          foregroundColor: Colors.black,
-          textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+  static final ThemeData dark = ThemeData(
+    useMaterial3: true,
+    brightness: Brightness.dark,
+    colorScheme: ColorScheme.dark(
+      primary: primary,
+      // secondary: secondary,
+      // surface: darkBg,
+      // onSurface: Colors.white,
+    ),
+    // scaffoldBackgroundColor: darkBg,
+    textTheme: const TextTheme(
+      titleLarge: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+      titleMedium: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: Colors.white70,
+      ),
+      bodyMedium: TextStyle(fontSize: 16, color: Colors.white70),
+      bodySmall: TextStyle(fontSize: 14, color: Colors.white60),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(8)),
+        borderSide: BorderSide(color: primary, width: 2),
+      ),
+      labelStyle: const TextStyle(color: Colors.white70),
+      hintStyle: const TextStyle(color: Colors.white54),
+    ),
+    // Botones
+    filledButtonTheme: FilledButtonThemeData(
+      style: ButtonStyle(
+        padding: WidgetStateProperty.all(
+          const EdgeInsets.symmetric(vertical: 12),
+        ),
+        shape: WidgetStateProperty.all(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
-
-      // Botones de texto
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: brandPrimary,
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-      ),
-
-      // Campos de texto (TextField)
-      inputDecorationTheme: InputDecorationTheme(
-        border: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(8)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: scheme.outlineVariant),
-          borderRadius: const BorderRadius.all(Radius.circular(8)),
-        ),
-        focusedBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: brandPrimary, width: 2),
-          borderRadius: BorderRadius.all(Radius.circular(8)),
-        ),
-        hintStyle: TextStyle(color: scheme.onSurfaceVariant),
-        labelStyle: TextStyle(color: scheme.onSurface),
-        prefixIconColor: scheme.onSurfaceVariant,
-        suffixIconColor: scheme.onSurfaceVariant,
-      ),
-    );
-  }
-
-  // Tema oscuro
-  static ThemeData _buildDarkTheme() {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: brandPrimary,
-      brightness: Brightness.dark,
-    );
-
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: scheme,
-
-      textTheme: TextTheme(
-        titleLarge: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-          color: scheme.onSurface,
-        ),
-        titleMedium: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: scheme.onSurface,
-        ),
-        bodyMedium: TextStyle(
-          fontSize: 16,
-          color: scheme.onSurfaceVariant,
-        ),
-        bodySmall: TextStyle(
-          fontSize: 14,
-          color: scheme.onSurfaceVariant,
-        ),
-      ),
-
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          backgroundColor: brandPrimary,
-          foregroundColor: Colors.black,
-          textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      ),
-
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: brandPrimary,
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-      ),
-
-      inputDecorationTheme: InputDecorationTheme(
-        border: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(8)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: scheme.outlineVariant),
-          borderRadius: const BorderRadius.all(Radius.circular(8)),
-        ),
-        focusedBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: brandPrimary, width: 2),
-          borderRadius: BorderRadius.all(Radius.circular(8)),
-        ),
-        hintStyle: TextStyle(color: scheme.onSurfaceVariant),
-        labelStyle: TextStyle(color: scheme.onSurface),
-        prefixIconColor: scheme.onSurfaceVariant,
-        suffixIconColor: scheme.onSurfaceVariant,
-      ),
-    );
-  }
+    ),
+  );
 }
