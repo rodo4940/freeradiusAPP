@@ -1,118 +1,198 @@
 import 'package:flutter/material.dart';
+import 'package:freeradius_app/providers/auth_provider.dart';
 import 'package:heroicons/heroicons.dart';
 
-
-class Login extends StatelessWidget {
+class Login extends StatefulWidget {
   const Login({super.key});
 
   @override
+  State<Login> createState() => _LoginState();
+}
+
+class _LoginState extends State<Login> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  bool _showPassword = false;
+  bool _submitting = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSubmit() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+
+    final success = await AuthController.login(
+      username: _usernameController.text.trim(),
+      password: _passwordController.text.trim(),
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _submitting = false;
+      _error = success ? null : AuthController.state.value.errorMessage;
+    });
+
+    if (success) {
+      Navigator.pushReplacementNamed(context, '/home');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);//Obtiene el tema activo actualmente (C o oscuro)
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(32),
-          child: Center(
-            child: Column(
-              children: [
-                Column(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(32),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary,//Segun el tema aplica el color primario definido en 
-                        shape: BoxShape.circle,
-                      ),
-                      child: HeroIcon(
-                        HeroIcons.wifi,
-                        size: 36,
-                        color: theme.colorScheme.onPrimary,
-                        // Cambiar color de acuerdo al tema
-                          // color: Theme.of(context).brightness == Brightness.dark
-                          //       ? Colors.white
-                          //       : Colors.black,
-                      ),
-                    ),
+                    _buildHeader(theme, colors),
+                    const SizedBox(height: 32),
                     Text(
-                      "infRadius",
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        // color: Colors.indigo,
+                      'Inicia sesión',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
+                      textAlign: TextAlign.center,
                     ),
-                    // SizedBox(height: 6),
-                    Text(
-                      "Sistema de gestión FreeRADIUS",
-                      style: TextStyle(
-                        // fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                Text(
-                  "Inicia sesión",
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 18),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Usuario', style: TextStyle(fontSize: 18)),
-                    const SizedBox(height: 6),
-                    TextField(
+                    const SizedBox(height: 24),
+                    TextFormField(
+                      controller: _usernameController,
                       decoration: const InputDecoration(
+                        labelText: 'Usuario',
                         prefixIcon: HeroIcon(HeroIcons.user),
-                        // border: OutlineInputBorder(
-                        //   borderRadius: BorderRadius.all(Radius.circular(8)),
-                        // ),
-                        hintText: 'Ingrese tu Usuario',
+                      ),
+                      textInputAction: TextInputAction.next,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Ingresa tu usuario';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _passwordController,
+                      decoration: InputDecoration(
+                        labelText: 'Contraseña',
+                        prefixIcon: const HeroIcon(HeroIcons.lockClosed),
+                        suffixIcon: IconButton(
+                          tooltip:
+                              _showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña',
+                          icon: HeroIcon(
+                            _showPassword
+                                ? HeroIcons.eyeSlash
+                                : HeroIcons.eye,
+                          ),
+                          onPressed: () {
+                            setState(() => _showPassword = !_showPassword);
+                          },
+                        ),
+                      ),
+                      obscureText: !_showPassword,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) => _handleSubmit(),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Ingresa tu contraseña';
+                        }
+                        return null;
+                      },
+                    ),
+                    if (_error != null) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        _error!,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colors.error,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      height: 48,
+                      child: FilledButton.icon(
+                        onPressed: _submitting ? null : _handleSubmit,
+                        icon: _submitting
+                            ? SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    colors.onPrimary,
+                                  ),
+                                ),
+                              )
+                            : const HeroIcon(HeroIcons.arrowRightOnRectangle),
+                        label: Text(_submitting ? 'Validando...' : 'Iniciar sesión'),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 18),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Contraseña', style: TextStyle(fontSize: 18)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      decoration: const InputDecoration(
-                        prefixIcon: HeroIcon(HeroIcons.lockClosed),
-                        suffixIcon: HeroIcon(HeroIcons.eye),
-                        // border: OutlineInputBorder(
-                        //   borderRadius: BorderRadius.all(Radius.circular(8)),
-                        // ),
-                        hintText: 'Ingrese tu Usuario',
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      // backgroundColor: Colors.orange,
-                      // padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    onPressed: () {
-                      Navigator.pushReplacementNamed(context,'/home');
-                    },
-                    child: Text("Iniciar Sesion"),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildHeader(ThemeData theme, ColorScheme colors) {
+    return Column(
+      children: [
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            color: colors.primary,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: HeroIcon(
+              HeroIcons.wifi,
+              size: 36,
+              color: colors.onPrimary,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'infRadius',
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Sistema de gestión FreeRADIUS',
+          style: theme.textTheme.bodyMedium,
+        ),
+      ],
     );
   }
 }

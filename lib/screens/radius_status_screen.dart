@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:freeradius_app/theme/app_theme.dart';
-import 'package:freeradius_app/widgets/drawer_widget.dart';
+import 'package:freeradius_app/models/radius_models.dart';
+import 'package:freeradius_app/services/api_services.dart';
+import 'package:freeradius_app/utilities/error_messages.dart';
+import 'package:freeradius_app/widgets/app_scaffold.dart';
+import 'package:freeradius_app/widgets/status/resource_usage_tile.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:intl/intl.dart';
 
@@ -12,257 +15,314 @@ class RadiusStatus extends StatefulWidget {
 }
 
 class _RadiusStatusState extends State<RadiusStatus> {
-  DateTime _lastUpdated = DateTime.now();
+  RadiusStatusInfo? _status;
+  RadiusSystemInfo? _systemInfo;
+  RadiusResourceUsage? _resourceUsage;
+  DateTime? _lastUpdated;
+  bool _loading = true;
+  bool _refreshing = false;
+  String? _error;
 
-  void _updateStatus() {
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
     setState(() {
-      _lastUpdated = DateTime.now();
+      _loading = true;
+      _error = null;
     });
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Datos actualizados.'),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+
+    try {
+      final results = await Future.wait([
+        apiService.fetchRadiusStatus(),
+        apiService.fetchRadiusSystemInfo(),
+        apiService.fetchRadiusResourceUsage(),
+      ]);
+
+      if (!mounted) return;
+      setState(() {
+        _status = results[0] as RadiusStatusInfo?;
+        _systemInfo = results[1] as RadiusSystemInfo?;
+        _resourceUsage = results[2] as RadiusResourceUsage?;
+        _lastUpdated = DateTime.now();
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = describeApiError(error));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _refreshing = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleRefresh() async {
+    if (_refreshing) return;
+    setState(() => _refreshing = true);
+    await _loadData();
   }
 
   @override
   Widget build(BuildContext context) {
-    final DateFormat formatter = DateFormat('dd/MM/yyyy, H:mm:ss');
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Estado RADIUS'),
-        backgroundColor: AppTheme.primary,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const HeroIcon(HeroIcons.arrowPath),
-            onPressed: _updateStatus,
-            tooltip: 'Actualizar',
-          ),
-        ],
-      ),
-      drawer: const DrawerWidget(),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          const Text(
-            'Monitoreo del servidor FreeRADIUS',
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.black54,
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Card: Estado del Servicio
-          _buildInfoCard(
-            title: 'Estado del Servicio',
-            icon: HeroIcons.serverStack,
-            children: [
-              _buildStatusTile(
-                title: 'Estado del Servicio',
-                subtitle: 'Ejecutándose',
-                leadingIcon: HeroIcons.power,
-                statusColor: Colors.green.shade600,
-              ),
-              _buildStatusTile(
-                title: 'Tiempo Activo',
-                subtitle: '15 días, 8h, 32m',
-                leadingIcon: HeroIcons.clock,
-              ),
-              _buildStatusTile(
-                title: 'Versión',
-                subtitle: 'FreeRADIUS 3.2.1',
-                leadingIcon: HeroIcons.informationCircle,
-              ),
-              _buildStatusTile(
-                title: 'Puerto',
-                subtitle: 'Auth: 1812 | Acct: 1813',
-                leadingIcon: HeroIcons.inbox,
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Card: Información del Sistema
-          _buildInfoCard(
-            title: 'Información del Sistema',
-            subtitle: 'Detalles del sistema operativo y configuración',
-            icon: HeroIcons.computerDesktop,
-            children: [
-              _buildStatusTile(
-                title: 'System Distro',
-                description: 'Distribución del sistema',
-                subtitle: 'Ubuntu Server 22.04.3 LTS',
-                leadingIcon: HeroIcons.cpuChip,
-              ),
-              _buildStatusTile(
-                title: 'Hostname',
-                description: 'Nombre del servidor',
-                subtitle: 'radius-server-01',
-                leadingIcon: HeroIcons.globeAlt,
-              ),
-              _buildStatusTile(
-                title: 'Network Interface',
-                description: 'Interfaz de red principal',
-                subtitle: 'eth0: 192.168.1.10/24',
-                leadingIcon: HeroIcons.wifi,
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          
-          // Card: Uso de Recursos
-          _buildInfoCard(
-            title: 'Uso de Recursos del Sistema',
-            subtitle: 'Monitoreo de recursos del servidor',
-            icon: HeroIcons.chartBarSquare,
-            children: [
-              _buildProgressTile('CPU', 46),
-              _buildProgressTile('Memoria', 55),
-              _buildProgressTile('Disco', 79),
-            ],
-          ),
-          const SizedBox(height: 32),
-          
-          // Última actualización
-          Center(
-            child: Text(
-              'Última actualización: ${formatter.format(_lastUpdated)}',
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
-            ),
-          ),
-        ],
-      ),
+    return AppScaffold(
+      title: 'Estado RADIUS',
+      onRefresh: () => _handleRefresh(),
+      body: _buildBody(context),
     );
   }
 
-  Widget _buildInfoCard({
-    required String title,
-    String? subtitle,
-    required HeroIcons icon,
-    required List<Widget> children,
-  }) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                HeroIcon(icon, color: AppTheme.darkBg),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.darkBg,
-                      ),
-                    ),
-                    if (subtitle != null)
-                      Text(
-                        subtitle,
-                        style: const TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-            const Divider(height: 24),
-            ...children,
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildBody(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
-  Widget _buildStatusTile({
-    required String title,
-    String? description,
-    required String subtitle,
-    required HeroIcons leadingIcon,
-    Color? statusColor,
-  }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(vertical: 4),
-      leading: HeroIcon(leadingIcon, color: AppTheme.primary),
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return ListView(
+        padding: const EdgeInsets.all(16),
+        physics: const AlwaysScrollableScrollPhysics(),
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-          if (description != null)
-            Text(description, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        ],
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (statusColor != null)
-            Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                color: statusColor,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: statusColor.withOpacity(0.5),
-                    blurRadius: 4,
-                    spreadRadius: 1,
-                  )
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, size: 48),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No se pudo consultar el estado del servidor.',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _error!,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: _loadData,
+                    child: const Text('Reintentar'),
+                  ),
                 ],
               ),
             ),
-          if (statusColor != null) const SizedBox(width: 8),
-          Text(subtitle, style: const TextStyle(fontSize: 14, color: Colors.black54)),
+          ),
+        ],
+      );
+    }
+
+    final status = _status;
+    final systemInfo = _systemInfo;
+    final resourceUsage = _resourceUsage;
+    final formatter = DateFormat('dd/MM/yyyy HH:mm:ss');
+
+    final statusLabel = status?.isRunning == true ? 'En ejecución' : 'Detenido';
+    final statusColor =
+        status?.isRunning == true ? Colors.green : colors.error;
+
+    return RefreshIndicator(
+      onRefresh: _handleRefresh,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colors.primary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: HeroIcon(
+                      HeroIcons.server,
+                      color: colors.primary,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Servidor RADIUS',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _InfoRow(
+                          label: 'Estado',
+                          value: status != null ? statusLabel : 'Desconocido',
+                          valueColor: status != null ? statusColor : null,
+                        ),
+                        _InfoRow(
+                          label: 'Versión',
+                          value: status?.version ?? '—',
+                        ),
+                        _InfoRow(
+                          label: 'Puertos',
+                          value: status != null
+                              ? 'Auth ${status.port} • Acct ${status.accountingPort}'
+                              : '—',
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (systemInfo != null || status != null) ...[
+            const SizedBox(height: 16),
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Información del sistema',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _InfoRow(
+                      label: 'Distribución',
+                      value: systemInfo?.distro ?? '—',
+                    ),
+                    _InfoRow(
+                      label: 'Nombre del servidor',
+                      value: systemInfo?.hostname ?? '—',
+                    ),
+                    _InfoRow(
+                      label: 'Interfaz de red',
+                      value: systemInfo?.networkInterface ?? '—',
+                    ),
+                    _InfoRow(
+                      label: 'Tiempo activo',
+                      value: status?.uptime ?? '—',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          if (resourceUsage != null) ...[
+            const SizedBox(height: 16),
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Uso de recursos',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ResourceUsageTile(
+                      label: 'CPU',
+                      percent: resourceUsage.cpuUsage,
+                    ),
+                    const SizedBox(height: 12),
+                    ResourceUsageTile(
+                      label: 'Memoria',
+                      percent: resourceUsage.memoryUsage,
+                    ),
+                    const SizedBox(height: 12),
+                    ResourceUsageTile(
+                      label: 'Disco',
+                      percent: resourceUsage.diskUsage,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          if (_lastUpdated != null) ...[
+            const SizedBox(height: 24),
+            Center(
+              child: Text(
+                'Última actualización: ${formatter.format(_lastUpdated!)}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
-  
-  Widget _buildProgressTile(String title, int percentage) {
-    Color progressColor;
-    if (percentage > 75) {
-      progressColor = Colors.red.shade400;
-    } else if (percentage > 50) {
-      progressColor = Colors.orange.shade400;
-    } else {
-      progressColor = Colors.green.shade400;
-    }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
+
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-              Text('$percentage%', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: progressColor)),
-            ],
+          Expanded(
+            flex: 2,
+            child: Text(
+              '$label:',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: colors.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
-          const SizedBox(height: 8),
-          LinearProgressIndicator(
-            value: percentage / 100,
-            backgroundColor: Colors.grey.shade200,
-            color: progressColor,
-            minHeight: 8,
-            borderRadius: BorderRadius.circular(4),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: valueColor ?? colors.onSurface,
+              ),
+            ),
           ),
         ],
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:freeradius_app/providers/auth_provider.dart';
 import 'package:heroicons/heroicons.dart';
 
 class DrawerWidget extends StatelessWidget {
@@ -29,23 +30,32 @@ class DrawerWidget extends StatelessWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  HeroIcon(HeroIcons.wifi, size: 64, color: colors.primary),
-                  Text(
-                    "infRadius",
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: colors.onSurface,
-                    ),
-                  ),
-                  Text(
-                    "Sistema de gestión FreeRADIUS",
-                    style: TextStyle(color: colors.onSurface),
-                  ),
-                ],
+              child: ValueListenableBuilder<AuthState>(
+                valueListenable: AuthController.state,
+                builder: (_, authState, __) {
+                  final user = authState.user;
+                  final subtitle = user != null
+                      ? '${user.role} • ${user.email}'
+                      : 'Inicia sesión para sincronizar';
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      HeroIcon(HeroIcons.wifi, size: 64, color: colors.primary),
+                      Text(
+                        user?.name ?? "infRadius",
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: colors.onSurface,
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: TextStyle(color: colors.onSurface),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
             Divider(
@@ -61,9 +71,11 @@ class DrawerWidget extends StatelessWidget {
                   ListTile(
                     textColor: colors.onSurface,
                     leading: HeroIcon(HeroIcons.home, color: colors.onSurface),
-                    title: const Text("Dasboard"),
-                    onTap: () =>
-                        Navigator.pushReplacementNamed(context, '/home'),
+                    title: const Text("Dashboard"),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushReplacementNamed(context, '/home');
+                    },
                   ),
                   ListTile(
                     textColor: colors.onSurface,
@@ -72,8 +84,10 @@ class DrawerWidget extends StatelessWidget {
                       color: colors.onSurface,
                     ),
                     title: const Text("Usuarios PPPoE"),
-                    onTap: () =>
-                        Navigator.pushReplacementNamed(context, '/pppoe_users'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushReplacementNamed(context, '/pppoe_users');
+                    },
                   ),
                   ListTile(
                     textColor: colors.onSurface,
@@ -82,18 +96,34 @@ class DrawerWidget extends StatelessWidget {
                       color: colors.onSurface,
                     ),
                     title: const Text("NAS/Routers"),
-                    onTap: () =>
-                        Navigator.pushReplacementNamed(context, '/nas'),
-                  ),
-                  ListTile(
-                    textColor: colors.onSurface,
-                    leading: HeroIcon(
-                      HeroIcons.circleStack,
-                      color: colors.onSurface,
-                    ),
-                    title: const Text("Base de Datos"),
-                    onTap: () =>
-                        Navigator.pushReplacementNamed(context, '/database'),
+                    onTap: () {
+                      Navigator.pop(context);
+                  Navigator.pushReplacementNamed(context, '/nas');
+                },
+              ),
+              ListTile(
+                textColor: colors.onSurface,
+                leading: HeroIcon(
+                  HeroIcons.adjustmentsVertical,
+                  color: colors.onSurface,
+                ),
+                title: const Text("Planes"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacementNamed(context, '/plans');
+                },
+              ),
+              ListTile(
+                textColor: colors.onSurface,
+                leading: HeroIcon(
+                  HeroIcons.circleStack,
+                  color: colors.onSurface,
+                ),
+                title: const Text("Base de Datos"),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushReplacementNamed(context, '/database');
+                    },
                   ),
                   ListTile(
                     textColor: colors.onSurface,
@@ -103,10 +133,10 @@ class DrawerWidget extends StatelessWidget {
                     ),
                     title: const Text("Estado RADIUS"),
 
-                    onTap: () => Navigator.pushReplacementNamed(
-                      context,
-                      '/radius_status',
-                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushReplacementNamed(context, '/radius_status');
+                    },
                   ),
                 ],
               ),
@@ -122,8 +152,33 @@ class DrawerWidget extends StatelessWidget {
                 color: colors.onSurface,
               ),
               title: const Text("Manual de Usuario"),
-              onTap: () =>
-                  Navigator.pushReplacementNamed(context, '/user_guide'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushReplacementNamed(context, '/user_guide');
+              },
+            ),
+            ValueListenableBuilder<AuthState>(
+              valueListenable: AuthController.state,
+              builder: (_, authState, __) {
+                final isLogged = authState.user != null;
+                return ListTile(
+                  textColor: colors.onSurface,
+                  leading: HeroIcon(
+                    isLogged ? HeroIcons.arrowLeftOnRectangle : HeroIcons.arrowRightOnRectangle,
+                    color: colors.onSurface,
+                  ),
+                  title: Text(isLogged ? "Cerrar sesión" : "Iniciar sesión"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    if (isLogged) {
+                      AuthController.logout();
+                      Navigator.pushReplacementNamed(context, '/login');
+                    } else {
+                      Navigator.pushReplacementNamed(context, '/login');
+                    }
+                  },
+                );
+              },
             ),
           ],
         ),

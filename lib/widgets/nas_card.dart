@@ -25,12 +25,13 @@ class NasCard extends StatelessWidget {
       // margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListTile(
         //Todos los widgets tiene ya estructura definida
-        leading: HeroIcon(HeroIcons.server,size: 30), //Widget al inicio
+        leading: HeroIcon(HeroIcons.server, size: 30), //Widget al inicio
         title: Text(
-          name, 
+          name,
           style: theme.textTheme.titleMedium?.copyWith(
-            color: theme.colorScheme.tertiary//Segun Modo Claro u Oscuro
-          )),
+            color: theme.colorScheme.tertiary, //Segun Modo Claro u Oscuro
+          ),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -46,7 +47,8 @@ class NasCard extends StatelessWidget {
         ),
         trailing: Row(
           //Witget al final
-          mainAxisSize: MainAxisSize.min,//Evita que ocupe todo el espacio horizontal
+          mainAxisSize:
+              MainAxisSize.min, //Evita que ocupe todo el espacio horizontal
           children: [
             Icon(
               Icons.circle,

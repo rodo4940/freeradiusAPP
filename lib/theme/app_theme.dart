@@ -11,14 +11,14 @@ class AppTheme {
     useMaterial3: true,
     brightness: Brightness.light,
     colorScheme: ColorScheme.light(
-    primary: Color(0xFFFB8500),    // naranja → botones principales
-    onPrimary: Colors.white,
-    secondary: Color(0xFF219EBC),  // azul → botones secundarios / acentos
-    onSecondary: Colors.white,
-    tertiary: Color(0xFFFFB703),   // amarillo → highlights, iconos, hover
-    onTertiary: Colors.black,
-    surface: Colors.white,
-    onSurface: Colors.black87,
+      primary: Color(0xFFFB8500), // naranja → botones principales
+      onPrimary: Colors.white,
+      secondary: Color(0xFF219EBC), // azul → botones secundarios / acentos
+      onSecondary: Colors.white,
+      tertiary: Color(0xFFFFB703), // amarillo → highlights, iconos, hover
+      onTertiary: Colors.black,
+      surface: Colors.white,
+      onSurface: Colors.black87,
     ),
     // scaffoldBackgroundColor: Colors.white,
     textTheme: const TextTheme(
