@@ -4,6 +4,8 @@ import 'package:freeradius_app/models/service_plan.dart';
 import 'package:freeradius_app/services/api_services.dart';
 import 'package:freeradius_app/utilities/error_messages.dart';
 import 'package:freeradius_app/widgets/app_scaffold.dart';
+import 'package:freeradius_app/widgets/forms/app_input_field.dart';
+import 'package:freeradius_app/widgets/forms/app_search_field.dart';
 import 'package:heroicons/heroicons.dart';
 
 class PppoeUsers extends StatefulWidget {
@@ -27,8 +29,10 @@ class _PppoeUsersState extends State<PppoeUsers> {
     final term = _searchController.text.trim().toLowerCase();
     if (term.isEmpty) return _users;
     return _users.where((user) {
+      final planName = _normalizePlanName(user.plan).toLowerCase();
       return user.username.toLowerCase().contains(term) ||
-          user.ipAddress.toLowerCase().contains(term);
+          user.router.toLowerCase().contains(term) ||
+          planName.contains(term);
     }).toList();
   }
 
@@ -63,13 +67,13 @@ class _PppoeUsersState extends State<PppoeUsers> {
         final plans = results[1] as List<ServicePlan>;
         final routers = results[2] as List<String>;
 
-        final normalizedPlanNames = <String>{
-          ...users.map((user) => _normalizePlanName(user.plan)),
-          ...plans.map((plan) => _normalizePlanName(plan.groupname)),
+        final planNames = <String>{
+          ...users.map((user) => user.plan),
+          ...plans.map((plan) => plan.groupname),
         }..removeWhere((name) => name.isEmpty);
 
         _users = users;
-        _planNames = normalizedPlanNames.toList()..sort();
+        _planNames = planNames.toList()..sort();
         _routers = routers;
       });
     } catch (error) {
@@ -214,7 +218,6 @@ class _PppoeUsersState extends State<PppoeUsers> {
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'Usuarios PPPoE',
-      onRefresh: () => _handleRefresh(),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _handleCreateOrEdit(),
         child: const HeroIcon(HeroIcons.plus),
@@ -237,23 +240,12 @@ class _PppoeUsersState extends State<PppoeUsers> {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const HeroIcon(HeroIcons.exclamationTriangle, size: 48),
-              const SizedBox(height: 8),
-              Text(
-                'No se pudieron cargar los usuarios.',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(_error!, textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _fetchData,
-                child: const Text('Reintentar'),
-              ),
-            ],
+          child: Text(
+            'No se pudieron cargar los usuarios.\n$_error',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
           ),
         ),
       );
@@ -264,12 +256,9 @@ class _PppoeUsersState extends State<PppoeUsers> {
       onRefresh: _handleRefresh,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: results.length + 2,
+        itemCount: results.length + 1,
         itemBuilder: (context, index) {
           if (index == 0) {
-            return _buildHeaderCard(context);
-          }
-          if (index == 1) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: _SearchField(
@@ -279,7 +268,7 @@ class _PppoeUsersState extends State<PppoeUsers> {
             );
           }
 
-          final user = results[index - 2];
+          final user = results[index - 1];
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: _UserCard(
@@ -294,68 +283,6 @@ class _PppoeUsersState extends State<PppoeUsers> {
     );
   }
 
-  Widget _buildHeaderCard(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-
-    return Card(
-      color: colors.surfaceContainerHighest,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: colors.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: HeroIcon(
-                    HeroIcons.signal,
-                    color: colors.primary,
-                    size: 26,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Gestion de usuarios PPPoE',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Administra altas, bajas y credenciales desde el movil.',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colors.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Usuarios visibles: ${_filteredUsers.length} / ${_users.length}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colors.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _UserCard extends StatelessWidget {
@@ -395,8 +322,17 @@ class _UserCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(user.plan, style: theme.textTheme.bodyMedium),
-              Text(user.router, style: theme.textTheme.bodyMedium),
+              Text(
+                _normalizePlanName(user.plan),
+                style: theme.textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Router: ${user.router}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -407,12 +343,6 @@ class _UserCard extends StatelessWidget {
                     style: theme.textTheme.bodySmall?.copyWith(color: statusColor),
                   ),
                 ],
-              ),
-              Text(
-                user.ipAddress,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colors.onSurfaceVariant,
-                ),
               ),
             ],
           ),
@@ -489,21 +419,9 @@ class _SearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
+    return AppSearchField(
       controller: controller,
-      decoration: InputDecoration(
-        labelText: 'Buscar por usuario o IP',
-        prefixIcon: const HeroIcon(HeroIcons.magnifyingGlass),
-        suffixIcon: controller.text.isNotEmpty
-            ? IconButton(
-                icon: const HeroIcon(HeroIcons.xMark),
-                onPressed: () {
-                  controller.clear();
-                  onChanged();
-                },
-              )
-            : null,
-      ),
+      hintText: 'Buscar por usuario, plan o router',
       onChanged: (_) => onChanged(),
     );
   }
@@ -528,9 +446,7 @@ class _UserFormDialogState extends State<_UserFormDialog> {
   final _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _usernameController;
-  late final TextEditingController _adminPasswordController;
-  late final TextEditingController _pppoePasswordController;
-  late final TextEditingController _ipController;
+  late final TextEditingController _passwordController;
 
   late String _selectedPlan;
   late String _selectedRouter;
@@ -542,25 +458,24 @@ class _UserFormDialogState extends State<_UserFormDialog> {
     final user = widget.initialUser;
 
     _usernameController = TextEditingController(text: user?.username ?? '');
-    _adminPasswordController =
-        TextEditingController(text: user?.adminPassword ?? '');
-    _pppoePasswordController =
-        TextEditingController(text: user?.pppoePassword ?? '');
-    _ipController = TextEditingController(text: user?.ipAddress ?? '');
+    _passwordController = TextEditingController(text: user?.password ?? '');
 
-    _selectedPlan = user?.plan ?? widget.planNames.first;
-    _selectedRouter = user?.router.isNotEmpty == true
-        ? user!.router
-        : widget.routers.first;
+    final plans = widget.planNames;
+    final routers = widget.routers;
+
+    _selectedPlan = user != null && plans.contains(user.plan)
+        ? user.plan
+        : plans.first;
+    _selectedRouter = user != null && routers.contains(user.router)
+        ? user.router
+        : routers.first;
     _selectedStatus = user?.status ?? PppoeStatus.activo;
   }
 
   @override
   void dispose() {
     _usernameController.dispose();
-    _adminPasswordController.dispose();
-    _pppoePasswordController.dispose();
-    _ipController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -577,12 +492,10 @@ class _UserFormDialogState extends State<_UserFormDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextFormField(
+                AppInputField(
+                  label: 'Usuario PPPoE',
+                  hintText: 'Ingresa el usuario',
                   controller: _usernameController,
-                  decoration: InputDecoration(
-                    labelText: 'Usuario PPPoE',
-                    prefixIcon: const HeroIcon(HeroIcons.user),
-                  ),
                   textInputAction: TextInputAction.next,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -592,28 +505,12 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                   },
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
-                  controller: _adminPasswordController,
-                  decoration: InputDecoration(
-                    labelText: 'Clave portal',
-                    prefixIcon: const HeroIcon(HeroIcons.key),
-                  ),
+                AppInputField(
+                  label: 'Contraseña PPPoE',
+                  hintText: 'Clave para conexión PPPoE',
+                  controller: _passwordController,
                   textInputAction: TextInputAction.next,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Ingresa una clave de administrador.';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _pppoePasswordController,
-                  decoration: InputDecoration(
-                    labelText: 'Clave PPPoE',
-                    prefixIcon: const HeroIcon(HeroIcons.lockClosed),
-                  ),
-                  textInputAction: TextInputAction.next,
+                  obscureText: true,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Ingresa una clave PPPoE.';
@@ -623,16 +520,16 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
+                  isExpanded: true,
                   value: _selectedPlan,
                   decoration: InputDecoration(
                     labelText: 'Plan',
-                    prefixIcon: const HeroIcon(HeroIcons.chartBarSquare),
                   ),
                   items: widget.planNames
                       .map(
                         (plan) => DropdownMenuItem(
                           value: plan,
-                          child: Text(plan),
+                          child: Text(_normalizePlanName(plan)),
                         ),
                       )
                       .toList(),
@@ -644,10 +541,10 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
+                  isExpanded: true,
                   value: _selectedRouter,
                   decoration: InputDecoration(
                     labelText: 'Router',
-                    prefixIcon: const HeroIcon(HeroIcons.serverStack),
                   ),
                   items: widget.routers
                       .map(
@@ -664,20 +561,11 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                   },
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
-                  controller: _ipController,
-                  decoration: InputDecoration(
-                    labelText: 'Direccion IP (opcional)',
-                    prefixIcon: const HeroIcon(HeroIcons.globeAlt),
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 12),
                 DropdownButtonFormField<PppoeStatus>(
+                  isExpanded: true,
                   value: _selectedStatus,
                   decoration: InputDecoration(
                     labelText: 'Estado',
-                    prefixIcon: const HeroIcon(HeroIcons.informationCircle),
                   ),
                   items: const [
                     DropdownMenuItem(
@@ -724,11 +612,9 @@ class _UserFormDialogState extends State<_UserFormDialog> {
 
     final result = _UserFormResult(
       username: _usernameController.text.trim(),
-      adminPassword: _adminPasswordController.text.trim(),
-      pppoePassword: _pppoePasswordController.text.trim(),
+      password: _passwordController.text.trim(),
       plan: _selectedPlan,
       router: _selectedRouter,
-      ipAddress: _ipController.text.trim(),
       status: _selectedStatus,
     );
 
@@ -739,30 +625,24 @@ class _UserFormDialogState extends State<_UserFormDialog> {
 class _UserFormResult {
   const _UserFormResult({
     required this.username,
-    required this.adminPassword,
-    required this.pppoePassword,
+    required this.password,
     required this.plan,
     required this.router,
-    required this.ipAddress,
     required this.status,
   });
 
   final String username;
-  final String adminPassword;
-  final String pppoePassword;
+  final String password;
   final String plan;
   final String router;
-  final String ipAddress;
   final PppoeStatus status;
 
   Map<String, dynamic> toPayload({int? id}) {
     final payload = <String, dynamic>{
       'username': username,
-      'password': adminPassword,
-      'pppoePassword': pppoePassword,
+      'password': password,
       'plan': plan,
       'router': router,
-      'ipAddress': ipAddress.isEmpty ? _generateIp() : ipAddress,
       'status': switch (status) {
         PppoeStatus.activo => 'Activo',
         PppoeStatus.inactivo => 'Inactivo',
@@ -776,10 +656,6 @@ class _UserFormResult {
     }
 
     return payload;
-  }
-
-  String _generateIp() {
-    return '192.168.1.${DateTime.now().millisecondsSinceEpoch % 200 + 10}';
   }
 }
 

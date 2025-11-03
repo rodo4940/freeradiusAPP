@@ -104,7 +104,7 @@ class DrawerWidget extends StatelessWidget {
               ListTile(
                 textColor: colors.onSurface,
                 leading: HeroIcon(
-                  HeroIcons.adjustmentsVertical,
+                  HeroIcons.cube,
                   color: colors.onSurface,
                 ),
                 title: const Text("Planes"),
@@ -155,29 +155,6 @@ class DrawerWidget extends StatelessWidget {
               onTap: () {
                 Navigator.pop(context);
                 Navigator.pushReplacementNamed(context, '/user_guide');
-              },
-            ),
-            ValueListenableBuilder<AuthState>(
-              valueListenable: AuthController.state,
-              builder: (_, authState, __) {
-                final isLogged = authState.user != null;
-                return ListTile(
-                  textColor: colors.onSurface,
-                  leading: HeroIcon(
-                    isLogged ? HeroIcons.arrowLeftOnRectangle : HeroIcons.arrowRightOnRectangle,
-                    color: colors.onSurface,
-                  ),
-                  title: Text(isLogged ? "Cerrar sesión" : "Iniciar sesión"),
-                  onTap: () {
-                    Navigator.pop(context);
-                    if (isLogged) {
-                      AuthController.logout();
-                      Navigator.pushReplacementNamed(context, '/login');
-                    } else {
-                      Navigator.pushReplacementNamed(context, '/login');
-                    }
-                  },
-                );
               },
             ),
           ],

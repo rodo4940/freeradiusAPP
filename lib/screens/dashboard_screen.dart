@@ -3,7 +3,7 @@ import 'package:freeradius_app/models/dashboard_models.dart';
 import 'package:freeradius_app/services/api_services.dart';
 import 'package:freeradius_app/utilities/error_messages.dart';
 import 'package:freeradius_app/widgets/app_scaffold.dart';
-import 'package:freeradius_app/widgets/status/overview_stat_card.dart';
+import 'package:freeradius_app/widgets/status/stat_info_card.dart';
 import 'package:heroicons/heroicons.dart';
 
 class Dashboard extends StatefulWidget {
@@ -49,7 +49,6 @@ class _DashboardState extends State<Dashboard> {
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'Dashboard',
-      onRefresh: _reload,
       body: FutureBuilder<_DashboardPayload>(
         future: _future,
         builder: (context, snapshot) {
@@ -58,17 +57,33 @@ class _DashboardState extends State<Dashboard> {
           }
 
           if (snapshot.hasError) {
-            return _ErrorState(
-              onRetry: _reload,
-              message: describeApiError(snapshot.error ?? ''),
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'No se pudo cargar el dashboard.\n${describeApiError(snapshot.error ?? '')}',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
+              ),
             );
           }
 
           final data = snapshot.data;
           if (data == null) {
-            return _ErrorState(
-              onRetry: _reload,
-              message: 'No se pudo obtener informacion del dashboard.',
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'No se pudo obtener información del dashboard.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
+              ),
             );
           }
 
@@ -106,25 +121,21 @@ class _DashboardView extends StatelessWidget {
         icon: HeroIcons.userGroup,
         label: 'Clientes activos',
         value: '${stats.activeClients}',
-        color: Colors.blue,
       ),
       _OverviewCardData(
         icon: HeroIcons.wifi,
         label: 'Routers activos',
         value: '${stats.activeRouters}',
-        color: Colors.green,
       ),
       _OverviewCardData(
         icon: HeroIcons.arrowTrendingUp,
         label: 'Conexiones hoy',
         value: '${stats.todayConnections}',
-        color: Colors.orange,
       ),
       _OverviewCardData(
         icon: HeroIcons.bolt,
         label: 'Ancho de banda total',
         value: stats.totalBandwidth,
-        color: Colors.purple,
       ),
     ];
 
@@ -162,22 +173,10 @@ class _DashboardView extends StatelessWidget {
                 itemCount: overviewCards.length,
                 itemBuilder: (context, index) {
                   final card = overviewCards[index];
-                  final baseColor = card.color;
-                  return OverviewStatCard(
-                    icon: card.icon,
+                  return StatInfoCard(
                     label: card.label,
                     value: card.value,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        baseColor.shade100,
-                        baseColor.shade50,
-                      ],
-                    ),
-                    iconColor: baseColor.shade600,
-                    iconBackground: baseColor.shade200,
-                    valueColor: baseColor.shade700,
+                    icon: card.icon,
                   );
                 },
               );
@@ -256,7 +255,7 @@ class _SectionCard extends StatelessWidget {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 0,
-      color: colors.surfaceContainerHighest,
+      color: colors.surface,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -305,58 +304,16 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({
-    required this.onRetry,
-    required this.message,
-  });
-
-  final VoidCallback onRetry;
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, size: 48),
-            const SizedBox(height: 12),
-            Text(
-              'No se pudo cargar el dashboard.',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: onRetry,
-              child: const Text('Reintentar'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _OverviewCardData {
   const _OverviewCardData({
     required this.icon,
     required this.label,
     required this.value,
-    required this.color,
   });
 
   final HeroIcons icon;
   final String label;
   final String value;
-  final MaterialColor color;
 }
 
 class _DashboardPayload {

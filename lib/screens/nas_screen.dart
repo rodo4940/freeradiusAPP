@@ -3,6 +3,7 @@ import 'package:freeradius_app/models/nas_device.dart';
 import 'package:freeradius_app/services/api_services.dart';
 import 'package:freeradius_app/utilities/error_messages.dart';
 import 'package:freeradius_app/widgets/app_scaffold.dart';
+import 'package:freeradius_app/widgets/forms/app_search_field.dart';
 import 'package:freeradius_app/widgets/nas_card.dart';
 
 class Nas extends StatefulWidget {
@@ -63,7 +64,6 @@ class _NasState extends State<Nas> {
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'NAS / Routers',
-      onRefresh: () => _loadDevices(),
       body: RefreshIndicator(
         onRefresh: _loadDevices,
         child: _buildBody(context),
@@ -84,31 +84,10 @@ class _NasState extends State<Nas> {
         padding: const EdgeInsets.all(16),
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.error_outline, size: 48),
-                  const SizedBox(height: 12),
-                  Text(
-                    'No se pudieron cargar los NAS.',
-                    style: theme.textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _error!,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: _loadDevices,
-                    child: const Text('Reintentar'),
-                  ),
-                ],
-              ),
+          Text(
+            'No se pudieron cargar los NAS.\n$_error',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colors.onSurface,
             ),
           ),
         ],
@@ -121,21 +100,9 @@ class _NasState extends State<Nas> {
       padding: const EdgeInsets.all(16),
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
-        TextField(
+        AppSearchField(
           controller: _searchController,
-          decoration: InputDecoration(
-            labelText: 'Buscar por nombre o IP',
-            prefixIcon: const Icon(Icons.search),
-            suffixIcon: _searchController.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() {});
-                    },
-                  )
-                : null,
-          ),
+          hintText: 'Buscar por nombre o IP',
           onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: 16),

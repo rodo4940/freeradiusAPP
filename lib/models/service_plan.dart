@@ -20,8 +20,18 @@ class ServicePlan {
   final String createdAt;
 
   factory ServicePlan.fromJson(Map<String, dynamic> json) {
+    int _parseId(dynamic value) {
+      if (value is num) {
+        return value.toInt();
+      }
+      if (value is String) {
+        return int.tryParse(value) ?? 0;
+      }
+      return 0;
+    }
+
     return ServicePlan(
-      id: (json['id'] as num?)?.toInt() ?? 0,
+      id: _parseId(json['id']),
       groupname: json['groupname'] as String? ?? '',
       downloadSpeed: json['downloadSpeed'] as String? ?? '',
       uploadSpeed: json['uploadSpeed'] as String? ?? '',

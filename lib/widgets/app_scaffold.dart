@@ -9,13 +9,11 @@ class AppScaffold extends StatelessWidget {
     super.key,
     required this.title,
     required this.body,
-    this.onRefresh,
     this.floatingActionButton,
   });
 
   final String title;
   final Widget body;
-  final VoidCallback? onRefresh;
   final Widget? floatingActionButton;
 
   @override
@@ -35,11 +33,6 @@ class AppScaffold extends StatelessWidget {
         title: Text(title),
         actions: [
           const _ThemeToggleButton(),
-          IconButton(
-            tooltip: 'Actualizar',
-            icon: const HeroIcon(HeroIcons.arrowPath),
-            onPressed: () => _handleRefresh(context),
-          ),
           ValueListenableBuilder<AuthState>(
             valueListenable: AuthController.state,
             builder: (context, authState, _) {
@@ -61,22 +54,6 @@ class AppScaffold extends StatelessWidget {
       ),
       body: body,
       floatingActionButton: floatingActionButton,
-    );
-  }
-
-  void _handleRefresh(BuildContext context) {
-    if (onRefresh != null) {
-      onRefresh!.call();
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'No hay accion de actualizacion disponible en esta pantalla.',
-        ),
-        duration: Duration(seconds: 2),
-      ),
     );
   }
 }

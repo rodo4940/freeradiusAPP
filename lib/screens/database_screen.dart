@@ -4,6 +4,7 @@ import 'package:freeradius_app/services/api_services.dart';
 import 'package:freeradius_app/utilities/error_messages.dart';
 import 'package:freeradius_app/widgets/app_scaffold.dart';
 import 'package:freeradius_app/widgets/status/resource_usage_tile.dart';
+import 'package:freeradius_app/widgets/status/status_info_item.dart';
 
 class Database extends StatefulWidget {
   const Database({super.key});
@@ -58,7 +59,6 @@ class _DatabaseState extends State<Database> {
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'Base de Datos',
-      onRefresh: () => _fetchData(),
       body: RefreshIndicator(
         onRefresh: _fetchData,
         child: _buildBody(context),
@@ -79,31 +79,10 @@ class _DatabaseState extends State<Database> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.error_outline, size: 48),
-                  const SizedBox(height: 12),
-                  Text(
-                    'No se pudo obtener el estado de la base de datos.',
-                    style: theme.textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _error!,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: _fetchData,
-                    child: const Text('Reintentar'),
-                  ),
-                ],
-              ),
+          Text(
+            'No se pudo obtener el estado de la base de datos.\n$_error',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colors.onSurface,
             ),
           ),
         ],
@@ -116,7 +95,7 @@ class _DatabaseState extends State<Database> {
       children: [
         Card(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          color: colors.surfaceContainerHighest,
+          color: colors.surface,
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -130,23 +109,26 @@ class _DatabaseState extends State<Database> {
                 ),
                 const SizedBox(height: 12),
                 if (_status != null) ...[
-                  _StatusRow(
+                  StatusInfoItem(
                     label: 'Estado',
                     value: _status!.status,
-                    icon: Icons.circle,
-                    iconColor: _status!.status.toLowerCase() == 'conectada'
-                        ? Colors.green
-                        : colors.error,
+                    leading: Icon(
+                      Icons.circle,
+                      size: 20,
+                      color: _status!.status.toLowerCase().contains('conectad')
+                          ? Colors.green
+                          : colors.error,
+                    ),
                   ),
-                  _StatusRow(
+                  StatusInfoItem(
                     label: 'Versión',
                     value: _status!.version,
-                    icon: Icons.storage_rounded,
+                    leading: const Icon(Icons.storage_rounded, size: 20),
                   ),
-                  _StatusRow(
+                  StatusInfoItem(
                     label: 'Puerto',
                     value: '${_status!.port}',
-                    icon: Icons.cable,
+                    leading: const Icon(Icons.cable, size: 20),
                   ),
                 ] else
                   Text(
@@ -160,6 +142,7 @@ class _DatabaseState extends State<Database> {
         const SizedBox(height: 16),
         if (_resourceUsage != null)
           Card(
+            color: colors.surface,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Padding(
@@ -195,6 +178,7 @@ class _DatabaseState extends State<Database> {
         if (_systemInfo != null) ...[
           const SizedBox(height: 16),
           Card(
+            color: colors.surface,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Padding(
@@ -209,25 +193,25 @@ class _DatabaseState extends State<Database> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _StatusRow(
-                    label: 'Distribucion',
+                  StatusInfoItem(
+                    label: 'Distribución',
                     value: _systemInfo!.distro,
-                    icon: Icons.lan,
+                    leading: const Icon(Icons.lan, size: 20),
                   ),
-                  _StatusRow(
+                  StatusInfoItem(
                     label: 'Hostname',
                     value: _systemInfo!.hostname,
-                    icon: Icons.router_outlined,
+                    leading: const Icon(Icons.router_outlined, size: 20),
                   ),
-                  _StatusRow(
+                  StatusInfoItem(
                     label: 'Ruta de datos',
                     value: _systemInfo!.dataPath,
-                    icon: Icons.folder_open,
+                    leading: const Icon(Icons.folder_open, size: 20),
                   ),
-                  _StatusRow(
+                  StatusInfoItem(
                     label: 'Tiempo activo',
                     value: _status?.uptime ?? '—',
-                    icon: Icons.av_timer,
+                    leading: const Icon(Icons.av_timer, size: 20),
                   ),
                 ],
               ),
@@ -239,52 +223,3 @@ class _DatabaseState extends State<Database> {
   }
 }
 
-class _StatusRow extends StatelessWidget {
-  const _StatusRow({
-    required this.label,
-    required this.value,
-    required this.icon,
-    this.iconColor,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color? iconColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20, color: iconColor ?? colors.primary),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: colors.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

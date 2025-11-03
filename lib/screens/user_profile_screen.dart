@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:freeradius_app/models/app_user.dart';
 import 'package:freeradius_app/providers/auth_provider.dart';
 import 'package:freeradius_app/providers/theme_controller.dart';
+import 'package:freeradius_app/widgets/forms/app_input_field.dart';
 import 'package:freeradius_app/widgets/profile/preference_toggle_tile.dart';
 import 'package:freeradius_app/widgets/profile/profile_header.dart';
 import 'package:heroicons/heroicons.dart';
@@ -120,6 +121,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
+  void _handleLogout() {
+    AuthController.logout();
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final maxWidth = MediaQuery.of(context).size.width;
@@ -201,6 +207,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       child: const Text('Guardar Cambios'),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  FilledButton.tonalIcon(
+                    onPressed: _handleLogout,
+                    icon: const HeroIcon(HeroIcons.arrowLeftOnRectangle),
+                    label: const Text('Cerrar sesión'),
+                  ),
                 ],
               ),
             ),
@@ -264,27 +276,25 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   children: [
                     SizedBox(
                       width: fieldWidth,
-                      child: TextFormField(
+                      child: AppInputField(
+                        label: 'Nombre completo',
+                        hintText: 'Ingresa tu nombre',
                         controller: _nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Nombre Completo',
-                          prefixIcon: HeroIcon(HeroIcons.user),
-                        ),
+                        prefixIcon: const HeroIcon(HeroIcons.user),
                         onChanged: (_) => setState(() {}),
                         validator: (value) =>
                             value == null || value.trim().isEmpty
-                            ? 'Ingresa tu nombre'
-                            : null,
+                                ? 'Ingresa tu nombre'
+                                : null,
                       ),
                     ),
                     SizedBox(
                       width: fieldWidth,
-                      child: TextFormField(
+                      child: AppInputField(
+                        label: 'Correo electrónico',
+                        hintText: 'usuario@dominio.com',
                         controller: _emailController,
-                        decoration: const InputDecoration(
-                          labelText: 'Correo Electrónico',
-                          prefixIcon: HeroIcon(HeroIcons.envelope),
-                        ),
+                        prefixIcon: const HeroIcon(HeroIcons.envelope),
                         keyboardType: TextInputType.emailAddress,
                         onChanged: (_) => setState(() {}),
                         validator: (value) {
@@ -353,13 +363,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               ],
             ),
             const SizedBox(height: 20),
-            TextFormField(
+            AppInputField(
+              label: 'Contraseña actual',
+              hintText: 'Ingresa tu contraseña actual',
               controller: _currentPasswordController,
-              decoration: const InputDecoration(
-                labelText: 'Contraseña Actual',
-                prefixIcon: HeroIcon(HeroIcons.lockClosed),
-                hintText: 'Ingresa tu contraseña actual',
-              ),
+              prefixIcon: const HeroIcon(HeroIcons.lockClosed),
               obscureText: !_showPasswords,
             ),
             const SizedBox(height: 16),
@@ -375,25 +383,21 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   children: [
                     SizedBox(
                       width: fieldWidth,
-                      child: TextFormField(
+                      child: AppInputField(
+                        label: 'Nueva contraseña',
+                        hintText: 'Nueva contraseña',
                         controller: _newPasswordController,
-                        decoration: const InputDecoration(
-                          labelText: 'Nueva Contraseña',
-                          prefixIcon: HeroIcon(HeroIcons.key),
-                          hintText: 'Nueva contraseña',
-                        ),
+                        prefixIcon: const HeroIcon(HeroIcons.key),
                         obscureText: !_showPasswords,
                       ),
                     ),
                     SizedBox(
                       width: fieldWidth,
-                      child: TextFormField(
+                      child: AppInputField(
+                        label: 'Confirmar contraseña',
+                        hintText: 'Confirma la nueva contraseña',
                         controller: _confirmPasswordController,
-                        decoration: const InputDecoration(
-                          labelText: 'Confirmar Contraseña',
-                          prefixIcon: HeroIcon(HeroIcons.key),
-                          hintText: 'Confirma la nueva contraseña',
-                        ),
+                        prefixIcon: const HeroIcon(HeroIcons.key),
                         obscureText: !_showPasswords,
                       ),
                     ),

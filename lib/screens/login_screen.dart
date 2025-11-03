@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freeradius_app/providers/auth_provider.dart';
+import 'package:freeradius_app/theme/app_theme.dart';
+import 'package:freeradius_app/widgets/forms/app_input_field.dart';
 import 'package:heroicons/heroicons.dart';
 
 class Login extends StatefulWidget {
@@ -70,21 +72,20 @@ class _LoginState extends State<Login> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _buildHeader(theme, colors),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 18),
                     Text(
                       'Inicia sesión',
                       style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 24),
-                    TextFormField(
+                    const SizedBox(height: 18),
+                    AppInputField(
+                      label: 'Usuario',
+                      hintText: 'Ingresa tu usuario',
                       controller: _usernameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Usuario',
-                        prefixIcon: HeroIcon(HeroIcons.user),
-                      ),
+                      prefixIcon: const HeroIcon(HeroIcons.user),
                       textInputAction: TextInputAction.next,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -93,24 +94,24 @@ class _LoginState extends State<Login> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 16),
-                    TextFormField(
+                    const SizedBox(height: 18),
+                    AppInputField(
+                      label: 'Contraseña',
+                      hintText: 'Ingresa tu contraseña',
                       controller: _passwordController,
-                      decoration: InputDecoration(
-                        labelText: 'Contraseña',
-                        prefixIcon: const HeroIcon(HeroIcons.lockClosed),
-                        suffixIcon: IconButton(
-                          tooltip:
-                              _showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña',
-                          icon: HeroIcon(
-                            _showPassword
-                                ? HeroIcons.eyeSlash
-                                : HeroIcons.eye,
-                          ),
-                          onPressed: () {
-                            setState(() => _showPassword = !_showPassword);
-                          },
+                      prefixIcon: const HeroIcon(HeroIcons.lockClosed),
+                      suffixIcon: IconButton(
+                        tooltip: _showPassword
+                            ? 'Ocultar contraseña'
+                            : 'Mostrar contraseña',
+                        icon: HeroIcon(
+                          _showPassword
+                              ? HeroIcons.eyeSlash
+                              : HeroIcons.eye,
                         ),
+                        onPressed: () {
+                          setState(() => _showPassword = !_showPassword);
+                        },
                       ),
                       obscureText: !_showPassword,
                       textInputAction: TextInputAction.done,
@@ -123,7 +124,7 @@ class _LoginState extends State<Login> {
                       },
                     ),
                     if (_error != null) ...[
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 18),
                       Text(
                         _error!,
                         style: theme.textTheme.bodyMedium?.copyWith(
@@ -132,24 +133,29 @@ class _LoginState extends State<Login> {
                         textAlign: TextAlign.center,
                       ),
                     ],
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 18),
                     SizedBox(
                       height: 48,
-                      child: FilledButton.icon(
+                      child: FilledButton(
                         onPressed: _submitting ? null : _handleSubmit,
-                        icon: _submitting
-                            ? SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    colors.onPrimary,
+                        child: _submitting
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor:
+                                          AlwaysStoppedAnimation<Color>(colors.onPrimary),
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(width: 12),
+                                  const Text('Validando...'),
+                                ],
                               )
-                            : const HeroIcon(HeroIcons.arrowRightOnRectangle),
-                        label: Text(_submitting ? 'Validando...' : 'Iniciar sesión'),
+                            : const Text('Iniciar sesión'),
                       ),
                     ),
                   ],
@@ -166,10 +172,10 @@ class _LoginState extends State<Login> {
     return Column(
       children: [
         Container(
-          width: 72,
-          height: 72,
+          width: 64,
+          height: 64,
           decoration: BoxDecoration(
-            color: colors.primary,
+            color: AppTheme.primary,
             shape: BoxShape.circle,
           ),
           child: Center(
@@ -184,10 +190,10 @@ class _LoginState extends State<Login> {
         Text(
           'infRadius',
           style: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         Text(
           'Sistema de gestión FreeRADIUS',
           style: theme.textTheme.bodyMedium,
@@ -195,4 +201,5 @@ class _LoginState extends State<Login> {
       ],
     );
   }
+
 }
