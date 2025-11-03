@@ -4,7 +4,6 @@ import 'package:freeradius_app/services/api_services.dart';
 import 'package:freeradius_app/utilities/error_messages.dart';
 import 'package:freeradius_app/widgets/app_scaffold.dart';
 import 'package:freeradius_app/widgets/status/resource_usage_tile.dart';
-import 'package:freeradius_app/widgets/status/status_info_item.dart';
 import 'package:heroicons/heroicons.dart';
 
 class RadiusStatus extends StatefulWidget {
@@ -68,180 +67,128 @@ class _RadiusStatusState extends State<RadiusStatus> {
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      title: 'Estado RADIUS',
-      body: _buildBody(context),
-    );
-  }
-
-  Widget _buildBody(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_error != null) {
-      return ListView(
-        padding: const EdgeInsets.all(16),
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          Text(
-            'No se pudo consultar el estado del servidor.\n$_error',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colors.onSurface,
-            ),
-          ),
-        ],
-      );
-    }
-
-    final status = _status;
-    final systemInfo = _systemInfo;
-    final resourceUsage = _resourceUsage;
-
-    final statusLabel = status?.isRunning == true ? 'En ejecución' : 'Detenido';
-    final statusColor = status?.isRunning == true ? Colors.green : colors.error;
-
-    return RefreshIndicator(
-      onRefresh: _handleRefresh,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          Card(
-            color: colors.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return AppScaffold(
+      title: 'Estado RADIUS',
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _handleRefresh,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
                 children: [
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: colors.primary.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: HeroIcon(
-                        HeroIcons.server,
-                        color: colors.primary,
-                        size: 28,
+                  if (_error != null)
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        'Error: $_error',
+                        style: TextStyle(color: colors.error),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  StatusInfoItem(
-                    label: 'Estado',
-                    value: status != null ? statusLabel : 'Desconocido',
-                    leading: Icon(Icons.circle, size: 18, color: statusColor),
-                  ),
-                  const SizedBox(height: 12),
-                  StatusInfoItem(
-                    label: 'Versión',
-                    value: status?.version ?? '—',
-                    leading: const HeroIcon(HeroIcons.cpuChip, size: 20),
-                  ),
-                  const SizedBox(height: 12),
-                  StatusInfoItem(
-                    label: 'Puertos',
-                    value: status != null
-                        ? 'Auth ${status.port} • Acct ${status.accountingPort}'
-                        : '—',
-                    leading: const HeroIcon(HeroIcons.circleStack, size: 20),
-                  ),
+                  if (_status != null) _buildMainCard(colors, theme),
+                  if (_systemInfo != null) _buildSystemCard(theme),
+                  if (_resourceUsage != null) _buildResourceCard(theme),
                 ],
               ),
             ),
-          ),
-          if (systemInfo != null || status != null) ...[
-            const SizedBox(height: 16),
-            Card(
-              color: colors.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+    );
+  }
+
+  Widget _buildMainCard(ColorScheme colors, ThemeData theme) {
+    final status = _status!;
+    final isRunning = status.isRunning == true;
+    final statusColor = isRunning ? Colors.green : colors.error;
+    final statusText = isRunning ? 'En ejecución' : 'Detenido';
+
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center, // centrado vertical
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Información del sistema',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    StatusInfoItem(
-                      label: 'Distribución',
-                      value: systemInfo?.distro ?? '—',
-                    ),
-                    const SizedBox(height: 12),
-                    StatusInfoItem(
-                      label: 'Nombre del servidor',
-                      value: systemInfo?.hostname ?? '—',
-                    ),
-                    const SizedBox(height: 12),
-                    StatusInfoItem(
-                      label: 'Interfaz de red',
-                      value: systemInfo?.networkInterface ?? '—',
-                    ),
-                    const SizedBox(height: 12),
-                    StatusInfoItem(
-                      label: 'Tiempo activo',
-                      value: status?.uptime ?? '—',
-                    ),
-                  ],
-                ),
+              child: HeroIcon(
+                HeroIcons.server,
+                color: colors.primary,
+                size: 36,
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Estado del Servidor',
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 6),
+                  Text('Estado: $statusText',
+                      style: TextStyle(color: statusColor)),
+                  Text('Versión: ${status.version ?? "—"}'),
+                  Text(
+                      'Puertos: Auth ${status.port} • Acct ${status.accountingPort}'),
+                ],
               ),
             ),
           ],
-          if (resourceUsage != null) ...[
-            const SizedBox(height: 16),
-            Card(
-              color: colors.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Uso de recursos',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ResourceUsageTile(
-                      label: 'CPU',
-                      percent: resourceUsage.cpuUsage,
-                    ),
-                    const SizedBox(height: 12),
-                    ResourceUsageTile(
-                      label: 'Memoria',
-                      percent: resourceUsage.memoryUsage,
-                    ),
-                    const SizedBox(height: 12),
-                    ResourceUsageTile(
-                      label: 'Disco',
-                      percent: resourceUsage.diskUsage,
-                    ),
-                  ],
-                ),
-              ),
-            ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSystemCard(ThemeData theme) {
+    final info = _systemInfo!;
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Información del sistema',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            Text('Distribución: ${info.distro ?? "—"}'),
+            Text('Servidor: ${info.hostname ?? "—"}'),
+            Text('Interfaz: ${info.networkInterface ?? "—"}'),
+            Text('Tiempo activo: ${_status?.uptime ?? "—"}'),
           ],
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResourceCard(ThemeData theme) {
+    final usage = _resourceUsage!;
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Uso de recursos',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            ResourceUsageTile(label: 'CPU', percent: usage.cpuUsage),
+            ResourceUsageTile(label: 'Memoria', percent: usage.memoryUsage),
+            ResourceUsageTile(label: 'Disco', percent: usage.diskUsage),
+          ],
+        ),
       ),
     );
   }
 }
-

@@ -4,7 +4,7 @@ import 'package:freeradius_app/services/api_services.dart';
 import 'package:freeradius_app/utilities/error_messages.dart';
 import 'package:freeradius_app/widgets/app_scaffold.dart';
 import 'package:freeradius_app/widgets/status/resource_usage_tile.dart';
-import 'package:freeradius_app/widgets/status/status_info_item.dart';
+import 'package:heroicons/heroicons.dart';
 
 class Database extends StatefulWidget {
   const Database({super.key});
@@ -49,177 +49,136 @@ class _DatabaseState extends State<Database> {
       if (!mounted) return;
       setState(() => _error = describeApiError(error));
     } finally {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return AppScaffold(
       title: 'Base de Datos',
-      body: RefreshIndicator(
-        onRefresh: _fetchData,
-        child: _buildBody(context),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _fetchData,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  if (_error != null)
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        'Error: $_error',
+                        style: TextStyle(color: colors.error),
+                      ),
+                    ),
+                  if (_status != null) _buildMainCard(colors, theme),
+                  if (_resourceUsage != null) _buildResourceCard(theme),
+                  if (_systemInfo != null) _buildSystemCard(theme),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildMainCard(ColorScheme colors, ThemeData theme) {
+    final status = _status!;
+    final connected =
+        status.status.toLowerCase().contains('conect') || status.status == 'OK';
+    final statusColor = connected ? Colors.green : colors.error;
+    final statusText = connected ? 'Conectado' : 'Desconectado';
+
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center, // centrado vertical
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: HeroIcon(
+                HeroIcons.circleStack,
+                color: colors.primary,
+                size: 36,
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Servidor MySQL',
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 6),
+                  Text('Estado: $statusText',
+                      style: TextStyle(color: statusColor)),
+                  Text('Versión: ${status.version ?? "—"}'),
+                  Text('Puerto: ${status.port ?? "—"}'),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildBody(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_error != null) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(
-            'No se pudo obtener el estado de la base de datos.\n$_error',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colors.onSurface,
-            ),
-          ),
-        ],
-      );
-    }
-
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16),
-      children: [
-        Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          color: colors.surface,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Estado del servidor MySQL',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                if (_status != null) ...[
-                  StatusInfoItem(
-                    label: 'Estado',
-                    value: _status!.status,
-                    leading: Icon(
-                      Icons.circle,
-                      size: 20,
-                      color: _status!.status.toLowerCase().contains('conectad')
-                          ? Colors.green
-                          : colors.error,
-                    ),
-                  ),
-                  StatusInfoItem(
-                    label: 'Versión',
-                    value: _status!.version,
-                    leading: const Icon(Icons.storage_rounded, size: 20),
-                  ),
-                  StatusInfoItem(
-                    label: 'Puerto',
-                    value: '${_status!.port}',
-                    leading: const Icon(Icons.cable, size: 20),
-                  ),
-                ] else
-                  Text(
-                    'No hay datos de estado disponibles.',
-                    style: theme.textTheme.bodyMedium,
-                  ),
-              ],
-            ),
-          ),
+  Widget _buildResourceCard(ThemeData theme) {
+    final usage = _resourceUsage!;
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Uso de recursos',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            ResourceUsageTile(label: 'CPU', percent: usage.cpuUsage),
+            ResourceUsageTile(label: 'Memoria', percent: usage.memoryUsage),
+            ResourceUsageTile(label: 'Disco', percent: usage.diskUsage),
+          ],
         ),
-        const SizedBox(height: 16),
-        if (_resourceUsage != null)
-          Card(
-            color: colors.surface,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Uso de recursos',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ResourceUsageTile(
-                    label: 'CPU',
-                    percent: _resourceUsage!.cpuUsage,
-                  ),
-                  const SizedBox(height: 12),
-                  ResourceUsageTile(
-                    label: 'Memoria',
-                    percent: _resourceUsage!.memoryUsage,
-                  ),
-                  const SizedBox(height: 12),
-                  ResourceUsageTile(
-                    label: 'Disco',
-                    percent: _resourceUsage!.diskUsage,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        if (_systemInfo != null) ...[
-          const SizedBox(height: 16),
-          Card(
-            color: colors.surface,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Informacion del sistema',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  StatusInfoItem(
-                    label: 'Distribución',
-                    value: _systemInfo!.distro,
-                    leading: const Icon(Icons.lan, size: 20),
-                  ),
-                  StatusInfoItem(
-                    label: 'Hostname',
-                    value: _systemInfo!.hostname,
-                    leading: const Icon(Icons.router_outlined, size: 20),
-                  ),
-                  StatusInfoItem(
-                    label: 'Ruta de datos',
-                    value: _systemInfo!.dataPath,
-                    leading: const Icon(Icons.folder_open, size: 20),
-                  ),
-                  StatusInfoItem(
-                    label: 'Tiempo activo',
-                    value: _status?.uptime ?? '—',
-                    leading: const Icon(Icons.av_timer, size: 20),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ],
+      ),
+    );
+  }
+
+  Widget _buildSystemCard(ThemeData theme) {
+    final info = _systemInfo!;
+    final uptime = _status?.uptime ?? '—';
+
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Información del sistema',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            Text('Distribución: ${info.distro ?? "—"}'),
+            Text('Hostname: ${info.hostname ?? "—"}'),
+            Text('Ruta de datos: ${info.dataPath ?? "—"}'),
+            Text('Tiempo activo: $uptime'),
+          ],
+        ),
+      ),
     );
   }
 }
-
