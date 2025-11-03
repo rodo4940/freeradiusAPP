@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:freeradius_app/models/pppoe_user.dart';
 import 'package:freeradius_app/models/service_plan.dart';
 import 'package:freeradius_app/services/api_services.dart';
@@ -216,10 +215,9 @@ class _PppoeUsersState extends State<PppoeUsers> {
     return AppScaffold(
       title: 'Usuarios PPPoE',
       onRefresh: () => _handleRefresh(),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () => _handleCreateOrEdit(),
-        icon: const HeroIcon(HeroIcons.plus),
-        label: const Text('Nuevo usuario'),
+        child: const HeroIcon(HeroIcons.plus),
       ),
       body: Column(
         children: [
@@ -377,224 +375,105 @@ class _UserCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    final statusColor = switch (user.status) {
+      PppoeStatus.activo => Colors.green.shade500,
+      PppoeStatus.inactivo => Colors.orange.shade600,
+      PppoeStatus.suspendido => Colors.red.shade500,
+      PppoeStatus.desconocido => colors.onSurfaceVariant,
+    };
 
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CircleAvatar(
-                  backgroundColor: colors.primaryContainer,
-                  foregroundColor: colors.onPrimaryContainer,
-                  child: Text(user.username.substring(0, 1).toUpperCase()),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user.username,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Plan: ${user.plan}',
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                      Text(
-                        'Router: ${user.router}',
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                      Text(
-                        'IP: ${user.ipAddress}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colors.onSurfaceVariant,
-                        ),
-                      ),
-                      if (user.lastConnection != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          'Ultima conexion: ${user.lastConnection}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colors.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          Chip(
-                            label: Text(user.statusLabel),
-                            avatar: Container(
-                              width: 12,
-                              height: 12,
-                              decoration: BoxDecoration(
-                                color: _statusColor(user.status),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ),
-                          ActionChip(
-                            label: const Text('Editar'),
-                            avatar: const HeroIcon(
-                              HeroIcons.pencilSquare,
-                              size: 18,
-                            ),
-                            onPressed: onEdit,
-                          ),
-                          ActionChip(
-                            label: const Text('Eliminar'),
-                            avatar: const HeroIcon(
-                              HeroIcons.trash,
-                              size: 18,
-                            ),
-                            onPressed: onDelete,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                PopupMenuButton<_UserAction>(
-                  onSelected: (action) {
-                    switch (action) {
-                      case _UserAction.activate:
-                        onStatusChange(PppoeStatus.activo);
-                      case _UserAction.deactivate:
-                        onStatusChange(PppoeStatus.inactivo);
-                      case _UserAction.suspend:
-                        onStatusChange(PppoeStatus.suspendido);
-                      case _UserAction.edit:
-                        onEdit();
-                      case _UserAction.delete:
-                        onDelete();
-                    }
-                  },
-                  itemBuilder: (context) {
-                    return <PopupMenuEntry<_UserAction>>[
-                      PopupMenuItem(
-                        value: _UserAction.edit,
-                        child: ListTile(
-                          leading: const HeroIcon(HeroIcons.pencilSquare),
-                          title: const Text('Editar'),
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: _UserAction.activate,
-                        child: ListTile(
-                          leading: const HeroIcon(HeroIcons.checkCircle),
-                          title: const Text('Marcar como activo'),
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: _UserAction.deactivate,
-                        child: ListTile(
-                          leading: const HeroIcon(HeroIcons.pauseCircle),
-                          title: const Text('Marcar como inactivo'),
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: _UserAction.suspend,
-                        child: ListTile(
-                          leading: const HeroIcon(HeroIcons.noSymbol),
-                          title: const Text('Suspender'),
-                        ),
-                      ),
-                      const PopupMenuDivider(),
-                      PopupMenuItem(
-                        value: _UserAction.delete,
-                        child: ListTile(
-                          leading: const HeroIcon(HeroIcons.trash),
-                          title: const Text('Eliminar usuario'),
-                        ),
-                      ),
-                    ];
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _CredentialRow(
-              icon: HeroIcons.key,
-              label: 'Clave portal',
-              value: user.adminPassword,
-            ),
-            const SizedBox(height: 6),
-            _CredentialRow(
-              icon: HeroIcons.lockClosed,
-              label: 'Clave PPPoE',
-              value: user.pppoePassword,
-              isSensitive: true,
-            ),
-          ],
+      margin: EdgeInsets.zero,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        title: Text(
+          user.username,
+          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
-      ),
-    );
-  }
-
-  Color _statusColor(PppoeStatus status) {
-    switch (status) {
-      case PppoeStatus.activo:
-        return Colors.green.shade500;
-      case PppoeStatus.inactivo:
-        return Colors.orange.shade600;
-      case PppoeStatus.suspendido:
-        return Colors.red.shade500;
-      case PppoeStatus.desconocido:
-        return Colors.grey;
-    }
-  }
-}
-
-class _CredentialRow extends StatelessWidget {
-  const _CredentialRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.isSensitive = false,
-  });
-
-  final HeroIcons icon;
-  final String label;
-  final String value;
-  final bool isSensitive;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final obscureText = isSensitive ? '••••••••' : value;
-
-    return Row(
-      children: [
-        HeroIcon(icon, size: 18),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            '$label: $obscureText',
-            style: theme.textTheme.bodyMedium,
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(user.plan, style: theme.textTheme.bodyMedium),
+              Text(user.router, style: theme.textTheme.bodyMedium),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.circle, size: 10, color: statusColor),
+                  const SizedBox(width: 6),
+                  Text(
+                    user.statusLabel,
+                    style: theme.textTheme.bodySmall?.copyWith(color: statusColor),
+                  ),
+                ],
+              ),
+              Text(
+                user.ipAddress,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
+            ],
           ),
         ),
-        IconButton(
-          tooltip: 'Copiar',
-          icon: const HeroIcon(HeroIcons.documentDuplicate, size: 18),
-          onPressed: () {
-            Clipboard.setData(ClipboardData(text: value));
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('$label copiada al portapapeles.')),
-            );
+        trailing: PopupMenuButton<_UserAction>(
+          onSelected: (action) {
+            switch (action) {
+              case _UserAction.activate:
+                onStatusChange(PppoeStatus.activo);
+              case _UserAction.deactivate:
+                onStatusChange(PppoeStatus.inactivo);
+              case _UserAction.suspend:
+                onStatusChange(PppoeStatus.suspendido);
+              case _UserAction.edit:
+                onEdit();
+              case _UserAction.delete:
+                onDelete();
+            }
+          },
+          itemBuilder: (context) {
+            return <PopupMenuEntry<_UserAction>>[
+              PopupMenuItem(
+                value: _UserAction.edit,
+                child: ListTile(
+                  leading: const HeroIcon(HeroIcons.pencilSquare),
+                  title: const Text('Editar'),
+                ),
+              ),
+              PopupMenuItem(
+                value: _UserAction.activate,
+                child: ListTile(
+                  leading: const HeroIcon(HeroIcons.checkCircle),
+                  title: const Text('Marcar como activo'),
+                ),
+              ),
+              PopupMenuItem(
+                value: _UserAction.deactivate,
+                child: ListTile(
+                  leading: const HeroIcon(HeroIcons.pauseCircle),
+                  title: const Text('Marcar como inactivo'),
+                ),
+              ),
+              PopupMenuItem(
+                value: _UserAction.suspend,
+                child: ListTile(
+                  leading: const HeroIcon(HeroIcons.noSymbol),
+                  title: const Text('Suspender'),
+                ),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem(
+                value: _UserAction.delete,
+                child: ListTile(
+                  leading: const HeroIcon(HeroIcons.trash),
+                  title: const Text('Eliminar usuario'),
+                ),
+              ),
+            ];
           },
         ),
-      ],
+      ),
     );
   }
 }
@@ -652,7 +531,6 @@ class _UserFormDialogState extends State<_UserFormDialog> {
   late final TextEditingController _adminPasswordController;
   late final TextEditingController _pppoePasswordController;
   late final TextEditingController _ipController;
-  late final TextEditingController _lastConnectionController;
 
   late String _selectedPlan;
   late String _selectedRouter;
@@ -669,8 +547,6 @@ class _UserFormDialogState extends State<_UserFormDialog> {
     _pppoePasswordController =
         TextEditingController(text: user?.pppoePassword ?? '');
     _ipController = TextEditingController(text: user?.ipAddress ?? '');
-    _lastConnectionController =
-        TextEditingController(text: user?.lastConnection ?? '');
 
     _selectedPlan = user?.plan ?? widget.planNames.first;
     _selectedRouter = user?.router.isNotEmpty == true
@@ -685,7 +561,6 @@ class _UserFormDialogState extends State<_UserFormDialog> {
     _adminPasswordController.dispose();
     _pppoePasswordController.dispose();
     _ipController.dispose();
-    _lastConnectionController.dispose();
     super.dispose();
   }
 
@@ -824,14 +699,6 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                     }
                   },
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _lastConnectionController,
-                  decoration: InputDecoration(
-                    labelText: 'Ultima conexion (opcional)',
-                    prefixIcon: const HeroIcon(HeroIcons.clock),
-                  ),
-                ),
               ],
             ),
           ),
@@ -863,9 +730,6 @@ class _UserFormDialogState extends State<_UserFormDialog> {
       router: _selectedRouter,
       ipAddress: _ipController.text.trim(),
       status: _selectedStatus,
-      lastConnection: _lastConnectionController.text.trim().isEmpty
-          ? null
-          : _lastConnectionController.text.trim(),
     );
 
     Navigator.of(context).pop(result);
@@ -881,7 +745,6 @@ class _UserFormResult {
     required this.router,
     required this.ipAddress,
     required this.status,
-    this.lastConnection,
   });
 
   final String username;
@@ -891,7 +754,6 @@ class _UserFormResult {
   final String router;
   final String ipAddress;
   final PppoeStatus status;
-  final String? lastConnection;
 
   Map<String, dynamic> toPayload({int? id}) {
     final payload = <String, dynamic>{
@@ -907,8 +769,6 @@ class _UserFormResult {
         PppoeStatus.suspendido => 'Suspendido',
         PppoeStatus.desconocido => 'Desconocido',
       },
-      if (lastConnection != null && lastConnection!.isNotEmpty)
-        'lastConnection': lastConnection,
     };
 
     if (id != null) {

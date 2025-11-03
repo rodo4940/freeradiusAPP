@@ -131,120 +131,44 @@ class _PlansState extends State<Plans> {
       );
     }
 
-    final totalPlans = _plans.length;
-    final withParent = _plans.where((plan) => plan.parent.isNotEmpty).length;
-
-    return ListView(
+    return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
-      children: [
-        Card(
-          color: colors.surfaceContainerHighest,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          margin: const EdgeInsets.only(bottom: 16),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Resumen de planes',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
+      itemBuilder: (context, index) {
+        final plan = _plans[index];
+        return Card(
+          child: ListTile(
+            title: Text(_formatPlanName(plan.groupname)),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(plan.description, style: theme.textTheme.bodyMedium),
+                  Text(
+                    'Bajada ${plan.downloadSpeed} • Subida ${plan.uploadSpeed}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '$totalPlans planes configurados • $withParent con herencia',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colors.onSurfaceVariant,
+                  Text(
+                    'Pool ${plan.poolName}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        ..._plans.map(
-          (plan) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: ListTile(
-                title: Text(_formatPlanName(plan.groupname)),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      plan.description,
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Wrap(
-                      spacing: 12,
-                      children: [
-                        _ChipData(
-                          icon: Icons.download,
-                          label: 'Bajada ${plan.downloadSpeed}',
-                        ),
-                        _ChipData(
-                          icon: Icons.upload,
-                          label: 'Subida ${plan.uploadSpeed}',
-                        ),
-                        _ChipData(
-                          icon: Icons.storage,
-                          label: 'Pool ${plan.poolName}',
-                        ),
-                      ],
-                    ),
-                    if (plan.parent.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'Padre: ${plan.parent}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colors.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 4),
-                    Text(
-                      'Creado: ${plan.createdAt}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colors.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
             ),
           ),
-        ),
-      ],
+        );
+      },
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemCount: _plans.length,
     );
   }
 
   String _formatPlanName(String value) {
     return value.replaceAll('_', ' ');
-  }
-}
-
-class _ChipData extends StatelessWidget {
-  const _ChipData({
-    required this.icon,
-    required this.label,
-  });
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
-    return Chip(
-      avatar: Icon(icon, size: 16, color: colors.primary),
-      label: Text(label),
-    );
   }
 }

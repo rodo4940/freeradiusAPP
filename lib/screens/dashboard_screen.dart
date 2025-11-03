@@ -143,12 +143,12 @@ class _DashboardView extends StatelessWidget {
           LayoutBuilder(
             builder: (context, constraints) {
               final width = constraints.maxWidth;
-              final crossAxisCount = width >= 1100
-                  ? 4
-                  : width >= 820
+              final crossAxisCount = width >= 960
+                  ? 3
+                  : width >= 640
                       ? 2
                       : 1;
-              final ratio = crossAxisCount == 1 ? 3.2 : 2.4;
+              final ratio = crossAxisCount == 1 ? 2.8 : 2.0;
 
               return GridView.builder(
                 shrinkWrap: true,
@@ -168,15 +168,15 @@ class _DashboardView extends StatelessWidget {
                     label: card.label,
                     value: card.value,
                     gradient: LinearGradient(
-                      colors: [
-                        baseColor.withValues(alpha: 0.18),
-                        baseColor.withValues(alpha: 0.05),
-                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
+                      colors: [
+                        baseColor.shade100,
+                        baseColor.shade50,
+                      ],
                     ),
-                    iconColor: baseColor.shade500,
-                    iconBackground: baseColor.shade100,
+                    iconColor: baseColor.shade600,
+                    iconBackground: baseColor.shade200,
                     valueColor: baseColor.shade700,
                   );
                 },
@@ -187,50 +187,45 @@ class _DashboardView extends StatelessWidget {
           _SectionCard(
             icon: HeroIcons.chartBarSquare,
             title: 'Conexiones mensuales',
-            subtitle:
-                'Resumen de usuarios, nuevos registros y conexiones exitosas.',
+            subtitle: 'Usuarios totales, altas y conexiones exitosas.',
             child: Column(
-              children: connections
-                  .map(
-                    (item) => ListTile(
-                      dense: true,
-                      leading: CircleAvatar(
-                        child: Text(item.month.substring(0, 1)),
-                      ),
-                      title: Text(item.month),
-                      subtitle: Text(
-                        '${item.users} usuarios • ${item.newUsers} nuevos • ${item.successfulConnections} exitosas',
-                      ),
+              children: [
+                for (var i = 0; i < connections.length; i++) ...[
+                  ListTile(
+                    dense: true,
+                    title: Text(connections[i].month),
+                    subtitle: Text(
+                      '${connections[i].users} usuarios • ${connections[i].newUsers} nuevos • ${connections[i].successfulConnections} exitosas',
                     ),
-                  )
-                  .toList(),
+                  ),
+                  if (i < connections.length - 1)
+                    const Divider(height: 8),
+                ],
+              ],
             ),
           ),
           const SizedBox(height: 24),
           _SectionCard(
             icon: HeroIcons.chartPie,
-            title: 'Distribucion de planes',
-            subtitle:
-                'Cantidad de clientes por tipo de plan comercial configurado.',
+            title: 'Distribución de planes',
+            subtitle: 'Clientes enrolados por cada plan comercial.',
             child: Column(
-              children: distribution
-                  .map(
-                    (item) => ListTile(
-                      dense: true,
-                      leading: CircleAvatar(
-                        backgroundColor: _parseColor(item.color),
-                        child: Text(
-                          item.value.toString(),
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: Colors.white,
-                          ),
-                        ),
+              children: [
+                for (var i = 0; i < distribution.length; i++) ...[
+                  ListTile(
+                    dense: true,
+                    title: Text(distribution[i].name),
+                    trailing: Text(
+                      distribution[i].value.toString(),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
-                      title: Text(item.name),
-                      subtitle: Text('Clientes asignados'),
                     ),
-                  )
-                  .toList(),
+                  ),
+                  if (i < distribution.length - 1)
+                    const Divider(height: 8),
+                ],
+              ],
             ),
           ),
         ],
@@ -238,14 +233,6 @@ class _DashboardView extends StatelessWidget {
     );
   }
 
-  Color _parseColor(String value) {
-    try {
-      final hex = value.replaceAll('#', '');
-      return Color(int.parse('FF$hex', radix: 16));
-    } catch (_) {
-      return Colors.blueGrey;
-    }
-  }
 }
 
 class _SectionCard extends StatelessWidget {

@@ -51,11 +51,6 @@ class AppScaffold extends StatelessWidget {
                   if (hasUser) {
                     Navigator.pushNamed(context, '/profile');
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Inicia sesión para ver tu perfil'),
-                      ),
-                    );
                     Navigator.pushReplacementNamed(context, '/login');
                   }
                 },

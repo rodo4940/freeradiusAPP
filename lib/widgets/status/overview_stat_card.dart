@@ -24,6 +24,7 @@ class OverviewStatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     return Container(
       decoration: BoxDecoration(
@@ -44,38 +45,39 @@ class OverviewStatCard extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: iconBackground,
-                    shape: BoxShape.circle,
-                  ),
-                  child: HeroIcon(icon, color: iconColor, size: 28),
-                ),
-                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         label,
                         style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.onSurface,
+                          color: colors.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         value,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: valueColor ?? theme.colorScheme.onSurface,
-                          fontWeight: FontWeight.w700,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: valueColor ?? colors.onSurface,
                         ),
                       ),
                     ],
                   ),
+                ),
+                const SizedBox(width: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: iconBackground,
+                    shape: BoxShape.circle,
+                  ),
+                  child: HeroIcon(icon, color: iconColor, size: 30),
                 ),
               ],
             ),
