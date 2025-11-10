@@ -6,7 +6,6 @@ class RadiusStatusInfo {
     required this.configPath,
     required this.logPath,
     required this.port,
-    required this.accountingPort,
   });
 
   final bool isRunning;
@@ -15,7 +14,6 @@ class RadiusStatusInfo {
   final String configPath;
   final String logPath;
   final int port;
-  final int accountingPort;
 
   factory RadiusStatusInfo.fromJson(Map<String, dynamic> json) {
     return RadiusStatusInfo(
@@ -25,7 +23,6 @@ class RadiusStatusInfo {
       configPath: json['configPath'] as String? ?? '',
       logPath: json['logPath'] as String? ?? '',
       port: (json['port'] as num?)?.toInt() ?? 0,
-      accountingPort: (json['accounting_port'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -35,17 +32,20 @@ class RadiusSystemInfo {
     required this.distro,
     required this.hostname,
     required this.networkInterface,
+    required this.ipAddress,
   });
 
   final String distro;
   final String hostname;
   final String networkInterface;
+  final String ipAddress;
 
   factory RadiusSystemInfo.fromJson(Map<String, dynamic> json) {
     return RadiusSystemInfo(
       distro: json['distro'] as String? ?? '',
       hostname: json['hostname'] as String? ?? '',
       networkInterface: json['networkInterface'] as String? ?? '',
+      ipAddress: json['ipaddress'] as String? ?? '',
     );
   }
 }
@@ -57,15 +57,21 @@ class RadiusResourceUsage {
     required this.diskUsage,
   });
 
-  final int cpuUsage;
-  final int memoryUsage;
-  final int diskUsage;
+  final double cpuUsage;
+  final double memoryUsage;
+  final double diskUsage;
 
   factory RadiusResourceUsage.fromJson(Map<String, dynamic> json) {
+    double parsePercent(dynamic value) {
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0;
+      return 0;
+    }
+
     return RadiusResourceUsage(
-      cpuUsage: (json['cpuUsage'] as num?)?.toInt() ?? 0,
-      memoryUsage: (json['memoryUsage'] as num?)?.toInt() ?? 0,
-      diskUsage: (json['diskUsage'] as num?)?.toInt() ?? 0,
+      cpuUsage: parsePercent(json['cpuUsage']),
+      memoryUsage: parsePercent(json['memoryUsage']),
+      diskUsage: parsePercent(json['diskUsage']),
     );
   }
 }

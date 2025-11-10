@@ -16,7 +16,7 @@ class AppUser {
   final String role;
 
   factory AppUser.fromJson(Map<String, dynamic> json) {
-    int _parseId(dynamic value) {
+    int parseId(dynamic value) {
       if (value is num) {
         return value.toInt();
       }
@@ -27,12 +27,23 @@ class AppUser {
     }
 
     return AppUser(
-      id: _parseId(json['id']),
+      id: parseId(json['id']),
       username: json['username'] as String? ?? '',
       password: json['password'] as String? ?? '',
       name: json['name'] as String? ?? '',
       email: json['email'] as String? ?? '',
       role: json['role'] as String? ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'username': username,
+      'password': password,
+      'name': name,
+      'email': email,
+      'role': role,
+    };
   }
 }

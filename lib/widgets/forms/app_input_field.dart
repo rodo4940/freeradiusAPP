@@ -55,7 +55,7 @@ class AppInputField extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final fillColor = colors.surfaceVariant.withOpacity(0.4);
+    final fillColor = colors.surfaceContainerHighest.withValues(alpha: 0.4);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

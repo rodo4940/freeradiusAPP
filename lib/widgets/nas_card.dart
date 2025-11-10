@@ -29,7 +29,8 @@ class NasCard extends StatelessWidget {
         title: Text(
           name,
           style: theme.textTheme.titleMedium?.copyWith(
-            color: theme.colorScheme.tertiary, //Segun Modo Claro u Oscuro
+            fontWeight: FontWeight.w700,
+            color: theme.colorScheme.primary, //Segun Modo Claro u Oscuro
           ),
         ),
         subtitle: Column(

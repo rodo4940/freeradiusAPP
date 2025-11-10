@@ -4,23 +4,17 @@ class ServicePlan {
     required this.groupname,
     required this.downloadSpeed,
     required this.uploadSpeed,
-    required this.poolName,
-    required this.parent,
-    required this.description,
-    required this.createdAt,
+    required this.mikrotikGroup,
   });
 
   final int id;
   final String groupname;
   final String downloadSpeed;
   final String uploadSpeed;
-  final String poolName;
-  final String parent;
-  final String description;
-  final String createdAt;
+  final String mikrotikGroup;
 
   factory ServicePlan.fromJson(Map<String, dynamic> json) {
-    int _parseId(dynamic value) {
+    int parseId(dynamic value) {
       if (value is num) {
         return value.toInt();
       }
@@ -31,14 +25,13 @@ class ServicePlan {
     }
 
     return ServicePlan(
-      id: _parseId(json['id']),
+      id: parseId(json['id']),
       groupname: json['groupname'] as String? ?? '',
       downloadSpeed: json['downloadSpeed'] as String? ?? '',
       uploadSpeed: json['uploadSpeed'] as String? ?? '',
-      poolName: json['poolName'] as String? ?? '',
-      parent: json['parent'] as String? ?? '',
-      description: json['description'] as String? ?? '',
-      createdAt: json['createdAt'] as String? ?? '',
+      mikrotikGroup: json['mikrotik_group'] as String? ?? '',
     );
   }
+
+  String get normalizedName => groupname.replaceAll('_', ' ').trim();
 }

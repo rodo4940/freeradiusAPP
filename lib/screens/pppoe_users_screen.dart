@@ -20,7 +20,6 @@ class _PppoeUsersState extends State<PppoeUsers> {
 
   List<PppoeUser> _users = <PppoeUser>[];
   List<String> _planNames = <String>[];
-  List<String> _routers = <String>[];
   bool _loading = true;
   bool _saving = false;
   String? _error;
@@ -29,9 +28,8 @@ class _PppoeUsersState extends State<PppoeUsers> {
     final term = _searchController.text.trim().toLowerCase();
     if (term.isEmpty) return _users;
     return _users.where((user) {
-      final planName = _normalizePlanName(user.plan).toLowerCase();
+      final planName = user.normalizedPlan.toLowerCase();
       return user.username.toLowerCase().contains(term) ||
-          user.router.toLowerCase().contains(term) ||
           planName.contains(term);
     }).toList();
   }
@@ -58,14 +56,12 @@ class _PppoeUsersState extends State<PppoeUsers> {
       final results = await Future.wait([
         apiService.fetchPppoeUsers(),
         apiService.fetchPlans(),
-        apiService.fetchRouters(),
       ]);
 
       if (!mounted) return;
       setState(() {
         final users = results[0] as List<PppoeUser>;
         final plans = results[1] as List<ServicePlan>;
-        final routers = results[2] as List<String>;
 
         final planNames = <String>{
           ...users.map((user) => user.plan),
@@ -74,7 +70,6 @@ class _PppoeUsersState extends State<PppoeUsers> {
 
         _users = users;
         _planNames = planNames.toList()..sort();
-        _routers = routers;
       });
     } catch (error) {
       if (!mounted) return;
@@ -91,11 +86,11 @@ class _PppoeUsersState extends State<PppoeUsers> {
   }
 
   Future<void> _handleCreateOrEdit({PppoeUser? user}) async {
-    if (_planNames.isEmpty || _routers.isEmpty) {
+    if (_planNames.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'No hay planes o routers disponibles. Verifica el backend.',
+            'No hay planes disponibles. Verifica el backend.',
           ),
         ),
       );
@@ -107,7 +102,6 @@ class _PppoeUsersState extends State<PppoeUsers> {
       barrierDismissible: false,
       builder: (context) => _UserFormDialog(
         planNames: _planNames,
-        routers: _routers,
         initialUser: user,
       ),
     );
@@ -118,22 +112,17 @@ class _PppoeUsersState extends State<PppoeUsers> {
 
     try {
       if (user == null) {
-        final created = await apiService.createPppoeUser(result.toPayload());
-        if (!mounted) return;
-        setState(() => _users = [..._users, created]);
-        _showSnackBar('Usuario creado correctamente.');
+        final payload = {
+          ...result.toPayload(),
+          'status': 'Activo',
+        };
+        await apiService.createPppoeUser(payload);
+        await _reloadUsers();
+        _showSnackBar('Cliente creado correctamente.');
       } else {
-        final updated = await apiService.updatePppoeUser(
-          user.id,
-          result.toPayload(id: user.id),
-        );
-        if (!mounted) return;
-        setState(() {
-          _users = _users
-              .map((current) => current.id == updated.id ? updated : current)
-              .toList();
-        });
-        _showSnackBar('Usuario actualizado correctamente.');
+        await apiService.updatePppoeUser(user.username, result.toPayload());
+        await _reloadUsers();
+        _showSnackBar('Cliente actualizado correctamente.');
       }
     } catch (error) {
       _showSnackBar(describeApiError(error));
@@ -148,7 +137,7 @@ class _PppoeUsersState extends State<PppoeUsers> {
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Eliminar usuario'),
+        title: const Text('Eliminar cliente'),
         content: Text(
           'Estas por eliminar a ${user.username}. Esta accion no se puede deshacer.',
         ),
@@ -169,10 +158,9 @@ class _PppoeUsersState extends State<PppoeUsers> {
 
     setState(() => _saving = true);
     try {
-      await apiService.deletePppoeUser(user.id);
-      if (!mounted) return;
-      setState(() => _users = _users.where((u) => u.id != user.id).toList());
-      _showSnackBar('Usuario eliminado correctamente.');
+      await apiService.deletePppoeUser(user.username);
+      await _reloadUsers();
+      _showSnackBar('Cliente eliminado correctamente.');
     } catch (error) {
       _showSnackBar(describeApiError(error));
     } finally {
@@ -191,14 +179,14 @@ class _PppoeUsersState extends State<PppoeUsers> {
     try {
       final updatedUser = user.copyWith(status: newStatus);
       final payload = updatedUser.toJson();
-      final response = await apiService.updatePppoeUser(user.id, payload);
-      if (!mounted) return;
+      await apiService.updatePppoeUser(user.username, payload);
       setState(() {
         _users = _users
-            .map((current) => current.id == response.id ? response : current)
+            .map((current) =>
+                current.username == user.username ? updatedUser : current)
             .toList();
       });
-      _showSnackBar('Estado actualizado a ${response.statusLabel}.');
+      _showSnackBar('Estado actualizado a ${updatedUser.statusLabel}.');
     } catch (error) {
       _showSnackBar(describeApiError(error));
     } finally {
@@ -206,6 +194,12 @@ class _PppoeUsersState extends State<PppoeUsers> {
         setState(() => _saving = false);
       }
     }
+  }
+
+  Future<void> _reloadUsers() async {
+    final refreshedUsers = await apiService.fetchPppoeUsers();
+    if (!mounted) return;
+    setState(() => _users = refreshedUsers);
   }
 
   void _showSnackBar(String message) {
@@ -217,7 +211,7 @@ class _PppoeUsersState extends State<PppoeUsers> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      title: 'Usuarios PPPoE',
+      title: 'Clientes',
       floatingActionButton: FloatingActionButton(
         onPressed: () => _handleCreateOrEdit(),
         child: const HeroIcon(HeroIcons.plus),
@@ -241,7 +235,7 @@ class _PppoeUsersState extends State<PppoeUsers> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            'No se pudieron cargar los usuarios.\n$_error',
+            'No se pudieron cargar los clientes.\n$_error',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
@@ -304,7 +298,6 @@ class _UserCard extends StatelessWidget {
     final colors = theme.colorScheme;
     final statusColor = switch (user.status) {
       PppoeStatus.activo => Colors.green.shade500,
-      PppoeStatus.inactivo => Colors.orange.shade600,
       PppoeStatus.suspendido => Colors.red.shade500,
       PppoeStatus.desconocido => colors.onSurfaceVariant,
     };
@@ -313,9 +306,13 @@ class _UserCard extends StatelessWidget {
       margin: EdgeInsets.zero,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        onTap: onEdit,
         title: Text(
           user.username,
-          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: colors.primary,
+          ),
         ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 6),
@@ -323,16 +320,10 @@ class _UserCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _normalizePlanName(user.plan),
+                user.normalizedPlan,
                 style: theme.textTheme.bodyMedium,
               ),
-              const SizedBox(height: 2),
-              Text(
-                'Router: ${user.router}',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colors.onSurfaceVariant,
-                ),
-              ),
+              const SizedBox(height: 4),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -347,65 +338,141 @@ class _UserCard extends StatelessWidget {
             ],
           ),
         ),
-        trailing: PopupMenuButton<_UserAction>(
-          onSelected: (action) {
-            switch (action) {
-              case _UserAction.activate:
-                onStatusChange(PppoeStatus.activo);
-              case _UserAction.deactivate:
-                onStatusChange(PppoeStatus.inactivo);
-              case _UserAction.suspend:
-                onStatusChange(PppoeStatus.suspendido);
-              case _UserAction.edit:
-                onEdit();
-              case _UserAction.delete:
-                onDelete();
-            }
-          },
-          itemBuilder: (context) {
-            return <PopupMenuEntry<_UserAction>>[
-              PopupMenuItem(
-                value: _UserAction.edit,
-                child: ListTile(
-                  leading: const HeroIcon(HeroIcons.pencilSquare),
-                  title: const Text('Editar'),
-                ),
-              ),
-              PopupMenuItem(
-                value: _UserAction.activate,
-                child: ListTile(
-                  leading: const HeroIcon(HeroIcons.checkCircle),
-                  title: const Text('Marcar como activo'),
-                ),
-              ),
-              PopupMenuItem(
-                value: _UserAction.deactivate,
-                child: ListTile(
-                  leading: const HeroIcon(HeroIcons.pauseCircle),
-                  title: const Text('Marcar como inactivo'),
-                ),
-              ),
-              PopupMenuItem(
-                value: _UserAction.suspend,
-                child: ListTile(
-                  leading: const HeroIcon(HeroIcons.noSymbol),
-                  title: const Text('Suspender'),
-                ),
-              ),
-              const PopupMenuDivider(),
-              PopupMenuItem(
-                value: _UserAction.delete,
-                child: ListTile(
-                  leading: const HeroIcon(HeroIcons.trash),
-                  title: const Text('Eliminar usuario'),
-                ),
-              ),
-            ];
-          },
+        trailing: _StatusMenu(
+          user: user,
+          onStatusChange: onStatusChange,
+          onEdit: onEdit,
+          onDelete: onDelete,
         ),
       ),
     );
   }
+}
+
+class _StatusMenu extends StatelessWidget {
+  const _StatusMenu({
+    required this.user,
+    required this.onStatusChange,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final PppoeUser user;
+  final ValueChanged<PppoeStatus> onStatusChange;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = _menuItemsForStatus(user.status);
+    if (items.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return PopupMenuButton<_MenuAction>(
+      onSelected: (item) async {
+        switch (item.type) {
+          case _MenuActionType.edit:
+            onEdit();
+            break;
+          case _MenuActionType.delete:
+            onDelete();
+            break;
+          case _MenuActionType.status:
+            if (item.targetStatus != null) {
+              onStatusChange(item.targetStatus!);
+            }
+            break;
+        }
+      },
+      itemBuilder: (context) {
+        return items
+            .map(
+              (item) => PopupMenuItem<_MenuAction>(
+                value: item,
+                child: ListTile(
+                  leading: HeroIcon(item.icon),
+                  title: Text(item.label),
+                ),
+              ),
+            )
+            .toList();
+      },
+    );
+  }
+
+  List<_MenuAction> _menuItemsForStatus(PppoeStatus status) {
+    final actions = <_MenuAction>[
+      const _MenuAction(
+        type: _MenuActionType.edit,
+        label: 'Editar cliente',
+        icon: HeroIcons.pencilSquare,
+      ),
+    ];
+
+    switch (status) {
+      case PppoeStatus.activo:
+        actions.add(
+          const _MenuAction(
+            type: _MenuActionType.status,
+            label: 'Suspender servicio',
+            icon: HeroIcons.noSymbol,
+            targetStatus: PppoeStatus.suspendido,
+          ),
+        );
+        break;
+      case PppoeStatus.suspendido:
+        actions.add(
+          const _MenuAction(
+            type: _MenuActionType.status,
+            label: 'Activar servicio',
+            icon: HeroIcons.checkCircle,
+            targetStatus: PppoeStatus.activo,
+          ),
+        );
+        break;
+      case PppoeStatus.desconocido:
+        actions.addAll(const [
+          _MenuAction(
+            type: _MenuActionType.status,
+            label: 'Activar servicio',
+            icon: HeroIcons.checkCircle,
+            targetStatus: PppoeStatus.activo,
+          ),
+          _MenuAction(
+            type: _MenuActionType.status,
+            label: 'Suspender servicio',
+            icon: HeroIcons.noSymbol,
+            targetStatus: PppoeStatus.suspendido,
+          ),
+        ]);
+        break;
+    }
+
+    actions.add(
+      const _MenuAction(
+        type: _MenuActionType.delete,
+        label: 'Eliminar cliente',
+        icon: HeroIcons.trash,
+      ),
+    );
+    return actions;
+  }
+}
+
+enum _MenuActionType { edit, status, delete }
+
+class _MenuAction {
+  const _MenuAction({
+    required this.label,
+    required this.icon,
+    required this.type,
+    this.targetStatus,
+  });
+
+  final String label;
+  final HeroIcons icon;
+  final _MenuActionType type;
+  final PppoeStatus? targetStatus;
 }
 
 class _SearchField extends StatelessWidget {
@@ -421,7 +488,7 @@ class _SearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppSearchField(
       controller: controller,
-      hintText: 'Buscar por usuario, plan o router',
+      hintText: 'Buscar por cliente o plan',
       onChanged: (_) => onChanged(),
     );
   }
@@ -430,12 +497,10 @@ class _SearchField extends StatelessWidget {
 class _UserFormDialog extends StatefulWidget {
   const _UserFormDialog({
     required this.planNames,
-    required this.routers,
     this.initialUser,
   });
 
   final List<String> planNames;
-  final List<String> routers;
   final PppoeUser? initialUser;
 
   @override
@@ -449,8 +514,6 @@ class _UserFormDialogState extends State<_UserFormDialog> {
   late final TextEditingController _passwordController;
 
   late String _selectedPlan;
-  late String _selectedRouter;
-  late PppoeStatus _selectedStatus;
 
   @override
   void initState() {
@@ -461,15 +524,10 @@ class _UserFormDialogState extends State<_UserFormDialog> {
     _passwordController = TextEditingController(text: user?.password ?? '');
 
     final plans = widget.planNames;
-    final routers = widget.routers;
 
     _selectedPlan = user != null && plans.contains(user.plan)
         ? user.plan
         : plans.first;
-    _selectedRouter = user != null && routers.contains(user.router)
-        ? user.router
-        : routers.first;
-    _selectedStatus = user?.status ?? PppoeStatus.activo;
   }
 
   @override
@@ -483,7 +541,7 @@ class _UserFormDialogState extends State<_UserFormDialog> {
   Widget build(BuildContext context) {
     final isEditing = widget.initialUser != null;
     return AlertDialog(
-      title: Text(isEditing ? 'Editar usuario' : 'Nuevo usuario'),
+      title: Text(isEditing ? 'Editar cliente' : 'Nuevo cliente'),
       content: SingleChildScrollView(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 420),
@@ -493,21 +551,22 @@ class _UserFormDialogState extends State<_UserFormDialog> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 AppInputField(
-                  label: 'Usuario PPPoE',
-                  hintText: 'Ingresa el usuario',
+                  label: 'Cliente',
+                  hintText: 'Nombre del cliente',
                   controller: _usernameController,
+                  readOnly: widget.initialUser != null,
                   textInputAction: TextInputAction.next,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Ingresa un usuario.';
+                      return 'Ingresa un cliente.';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 12),
                 AppInputField(
-                  label: 'Contraseña PPPoE',
-                  hintText: 'Clave para conexión PPPoE',
+                  label: 'Contraseña',
+                  hintText: 'Clave PPPoE',
                   controller: _passwordController,
                   textInputAction: TextInputAction.next,
                   obscureText: true,
@@ -520,70 +579,23 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
+                  key: ValueKey('plan-$_selectedPlan'),
                   isExpanded: true,
-                  value: _selectedPlan,
-                  decoration: InputDecoration(
+                  initialValue: _selectedPlan,
+                  decoration: const InputDecoration(
                     labelText: 'Plan',
                   ),
                   items: widget.planNames
                       .map(
                         (plan) => DropdownMenuItem(
                           value: plan,
-                          child: Text(_normalizePlanName(plan)),
+                          child: Text(plan.replaceAll('_', ' ')),
                         ),
                       )
                       .toList(),
                   onChanged: (value) {
                     if (value != null) {
                       setState(() => _selectedPlan = value);
-                    }
-                  },
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  isExpanded: true,
-                  value: _selectedRouter,
-                  decoration: InputDecoration(
-                    labelText: 'Router',
-                  ),
-                  items: widget.routers
-                      .map(
-                        (router) => DropdownMenuItem(
-                          value: router,
-                          child: Text(router),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() => _selectedRouter = value);
-                    }
-                  },
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<PppoeStatus>(
-                  isExpanded: true,
-                  value: _selectedStatus,
-                  decoration: InputDecoration(
-                    labelText: 'Estado',
-                  ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: PppoeStatus.activo,
-                      child: Text('Activo'),
-                    ),
-                    DropdownMenuItem(
-                      value: PppoeStatus.inactivo,
-                      child: Text('Inactivo'),
-                    ),
-                    DropdownMenuItem(
-                      value: PppoeStatus.suspendido,
-                      child: Text('Suspendido'),
-                    ),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() => _selectedStatus = value);
                     }
                   },
                 ),
@@ -614,8 +626,6 @@ class _UserFormDialogState extends State<_UserFormDialog> {
       username: _usernameController.text.trim(),
       password: _passwordController.text.trim(),
       plan: _selectedPlan,
-      router: _selectedRouter,
-      status: _selectedStatus,
     );
 
     Navigator.of(context).pop(result);
@@ -627,46 +637,20 @@ class _UserFormResult {
     required this.username,
     required this.password,
     required this.plan,
-    required this.router,
-    required this.status,
   });
 
   final String username;
   final String password;
   final String plan;
-  final String router;
-  final PppoeStatus status;
 
-  Map<String, dynamic> toPayload({int? id}) {
+  Map<String, dynamic> toPayload() {
     final payload = <String, dynamic>{
       'username': username,
       'password': password,
       'plan': plan,
-      'router': router,
-      'status': switch (status) {
-        PppoeStatus.activo => 'Activo',
-        PppoeStatus.inactivo => 'Inactivo',
-        PppoeStatus.suspendido => 'Suspendido',
-        PppoeStatus.desconocido => 'Desconocido',
-      },
     };
-
-    if (id != null) {
-      payload['id'] = id;
-    }
 
     return payload;
   }
 }
 
-enum _UserAction {
-  edit,
-  activate,
-  deactivate,
-  suspend,
-  delete,
-}
-String _normalizePlanName(String value) {
-  final cleaned = value.replaceAll('_', ' ').trim();
-  return cleaned.isEmpty ? value : cleaned;
-}

@@ -9,7 +9,7 @@ class ResourceUsageTile extends StatelessWidget {
   }) : assert(percent >= 0 && percent <= 100);
 
   final String label;
-  final int percent;
+  final double percent;
   final double height;
 
   Color _resolveColor(ColorScheme colors) {
@@ -41,7 +41,7 @@ class ResourceUsageTile extends StatelessWidget {
               ),
             ),
             Text(
-              '$percent%',
+              '${percent.toStringAsFixed(0)}%',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: barColor,
                 fontWeight: FontWeight.w600,

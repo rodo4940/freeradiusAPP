@@ -34,17 +34,18 @@ class _RadiusStatusState extends State<RadiusStatus> {
     });
 
     try {
-      final results = await Future.wait([
-        apiService.fetchRadiusStatus(),
-        apiService.fetchRadiusSystemInfo(),
-        apiService.fetchRadiusResourceUsage(),
-      ]);
-
+      final overview = await apiService.fetchOverview();
       if (!mounted) return;
       setState(() {
-        _status = results[0] as RadiusStatusInfo?;
-        _systemInfo = results[1] as RadiusSystemInfo?;
-        _resourceUsage = results[2] as RadiusResourceUsage?;
+        _status = overview.radiusStatus.isNotEmpty
+            ? overview.radiusStatus.first
+            : null;
+        _systemInfo = overview.radiusSystemInfo.isNotEmpty
+            ? overview.radiusSystemInfo.first
+            : null;
+        _resourceUsage = overview.radiusResourceUsage.isNotEmpty
+            ? overview.radiusResourceUsage.first
+            : null;
       });
     } catch (error) {
       if (!mounted) return;
@@ -101,6 +102,8 @@ class _RadiusStatusState extends State<RadiusStatus> {
     final isRunning = status.isRunning == true;
     final statusColor = isRunning ? Colors.green : colors.error;
     final statusText = isRunning ? 'En ejecución' : 'Detenido';
+    final versionLabel =
+        status.version.isEmpty ? 'Desconocido' : status.version;
 
     return Card(
       elevation: 1,
@@ -133,9 +136,10 @@ class _RadiusStatusState extends State<RadiusStatus> {
                   const SizedBox(height: 6),
                   Text('Estado: $statusText',
                       style: TextStyle(color: statusColor)),
-                  Text('Versión: ${status.version ?? "—"}'),
-                  Text(
-                      'Puertos: Auth ${status.port} • Acct ${status.accountingPort}'),
+                  Text('Versión: $versionLabel'),
+                  Text('Puerto autenticación: ${status.port}'),
+                  Text('Config: ${status.configPath}'),
+                  Text('Logs: ${status.logPath}'),
                 ],
               ),
             ),
@@ -147,6 +151,10 @@ class _RadiusStatusState extends State<RadiusStatus> {
 
   Widget _buildSystemCard(ThemeData theme) {
     final info = _systemInfo!;
+    final distroLabel = info.distro.isEmpty ? '—' : info.distro;
+    final hostLabel = info.hostname.isEmpty ? '—' : info.hostname;
+    final interfaceLabel =
+        info.networkInterface.isEmpty ? '—' : info.networkInterface;
     return Card(
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -159,9 +167,10 @@ class _RadiusStatusState extends State<RadiusStatus> {
                 style: theme.textTheme.titleMedium
                     ?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
-            Text('Distribución: ${info.distro ?? "—"}'),
-            Text('Servidor: ${info.hostname ?? "—"}'),
-            Text('Interfaz: ${info.networkInterface ?? "—"}'),
+            Text('Distribución: $distroLabel'),
+            Text('Servidor: $hostLabel'),
+            Text('Interfaz: $interfaceLabel'),
+            Text('IP: ${info.ipAddress.isEmpty ? "—" : info.ipAddress}'),
             Text('Tiempo activo: ${_status?.uptime ?? "—"}'),
           ],
         ),

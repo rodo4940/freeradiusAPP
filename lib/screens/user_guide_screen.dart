@@ -12,11 +12,11 @@ class UserGuide extends StatelessWidget {
 # Manual de Usuario - infRadius
 
 ## Introduccion
-**infRadius** es un sistema de gestion integral para servidores FreeRADIUS que permite administrar usuarios PPPoE, routers MikroTik (NAS) y realizar operaciones de activacion o corte de clientes de forma centralizada.
+**infRadius** es un sistema de gestion integral para servidores FreeRADIUS que permite administrar clientes PPPoE y routers MikroTik, y realizar operaciones de activacion o corte de clientes de forma centralizada.
 
 **Caracteristicas principales:**
-- Gestion completa de usuarios PPPoE
-- Administracion de routers MikroTik (NAS)
+- Gestion completa de clientes PPPoE
+- Administracion de routers MikroTik
 - Configuracion de planes y grupos de servicio
 - Monitoreo en tiempo real del servidor RADIUS
 - Herramientas de mantenimiento de base de datos
@@ -27,30 +27,29 @@ El dashboard proporciona una vista general del estado del sistema con metricas e
 
 **Metricas principales:**
 - **Clientes activos:** Numero de usuarios conectados
-- **Routers activos:** Cantidad de NAS operativos
+- **Routers activos:** Cantidad de equipos operativos
 - **Total de planes:** Planes de servicio configurados
 
-## Gestion de usuarios PPPoE
+## Gestion de clientes PPPoE
 
-**Crear usuario:**
-1. Hacer clic en "Nuevo usuario"
-2. Completar Username, Password, Plan y Router
-3. Confirmar con "Crear usuario"
+**Crear cliente:**
+1. Hacer clic en "Nuevo cliente".
+2. Completar Nombre del cliente (ID PPPoE), Contraseña y Plan.
+3. Confirmar con "Crear cliente".
 
 **Acciones disponibles:**
-- **Editar:** Modificar datos del usuario
-- **Eliminar:** Borrar usuario (requiere confirmacion)
-- **Ver trafico:** Consultar historial de consumo de datos
+- **Editar:** Tocar la tarjeta para actualizar contraseña o plan (el nombre queda de solo lectura).
+- **Eliminar:** Mantener presionada la tarjeta para lanzar la confirmacion.
+- **Activar/Suspender:** Usar el menu de tres puntos para cambiar el estado segun corresponda.
 
-**Estados del usuario:**
-- **Activo:** Usuario habilitado
-- **Inactivo:** Usuario temporalmente deshabilitado
-- **Conectado:** Usuario en linea
+**Estados del cliente:**
+- **Activo:** Cliente habilitado para autenticar.
+- **Suspendido:** Servicio cortado hasta reactivar.
 
-## Gestion de NAS / Routers
+## Gestion de Routers
 
-**Agregar nuevo NAS:**
-1. Hacer clic en "Agregar NAS"
+**Agregar nuevo router:**
+1. Hacer clic en "Agregar router"
 2. Completar informacion estandar: Nombre, IP Address, Secreto, Tipo, Puertos, etc.
 3. Probar conectividad antes de guardar
 
@@ -102,7 +101,7 @@ El dashboard proporciona una vista general del estado del sistema con metricas e
 3. Validar configuracion del plan
 4. Confirmar que el NAS este operativo
 
-**NAS aparece desconectado:**
+**Router aparece desconectado:**
 1. Revisar conectividad de red
 2. Validar el secret compartido
 3. Revisar configuracion RADIUS en MikroTik

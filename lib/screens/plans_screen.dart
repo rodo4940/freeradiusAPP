@@ -24,7 +24,7 @@ class _PlansState extends State<Plans> {
     if (term.isEmpty) return _plans;
     return _plans.where((plan) {
       return plan.groupname.toLowerCase().contains(term) ||
-          plan.description.toLowerCase().contains(term);
+          plan.mikrotikGroup.toLowerCase().contains(term);
     }).toList();
   }
 
@@ -171,20 +171,25 @@ class _PlansState extends State<Plans> {
                 color: theme.colorScheme.surfaceContainer,
                 child: ListTile(
                   leading: HeroIcon(HeroIcons.cube),
-                  title: Text(_formatPlanName(plan.groupname)),
+                  title: Text(
+                    plan.normalizedName,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colors.primary,
+                    ),
+                  ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(plan.description, style: theme.textTheme.bodyMedium),
-                      const SizedBox(height: 4),
                       Text(
                         'Bajada ${plan.downloadSpeed} • Subida ${plan.uploadSpeed}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: colors.onSurfaceVariant,
                         ),
                       ),
+                      const SizedBox(height: 2),
                       Text(
-                        'Pool ${plan.poolName}',
+                        'Grupo MikroTik: ${plan.mikrotikGroup.isEmpty ? '—' : plan.mikrotikGroup}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: colors.onSurfaceVariant,
                         ),
@@ -197,9 +202,5 @@ class _PlansState extends State<Plans> {
           ),
       ],
     );
-  }
-
-  String _formatPlanName(String value) {
-    return value.replaceAll('_', ' ');
   }
 }

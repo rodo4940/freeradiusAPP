@@ -63,7 +63,7 @@ class _NasState extends State<Nas> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      title: 'NAS / Routers',
+      title: 'Routers',
       body: RefreshIndicator(
         onRefresh: _loadDevices,
         child: _buildBody(context),
@@ -85,7 +85,7 @@ class _NasState extends State<Nas> {
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           Text(
-            'No se pudieron cargar los NAS.\n$_error',
+            'No se pudieron cargar los routers.\n$_error',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colors.onSurface,
             ),
@@ -115,7 +115,7 @@ class _NasState extends State<Nas> {
                   const Icon(Icons.storage_rounded, size: 40),
                   const SizedBox(height: 12),
                   Text(
-                    'No encontramos NAS con ese criterio.',
+                    'No encontramos routers con ese criterio.',
                     style: theme.textTheme.titleMedium,
                   ),
                   const SizedBox(height: 6),

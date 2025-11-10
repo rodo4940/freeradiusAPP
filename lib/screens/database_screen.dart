@@ -17,6 +17,7 @@ class _DatabaseState extends State<Database> {
   DatabaseStatus? _status;
   DatabaseSystemInfo? _systemInfo;
   DatabaseResourceUsage? _resourceUsage;
+  List<DatabaseTableInfo> _tables = const [];
   bool _loading = true;
   String? _error;
 
@@ -33,17 +34,19 @@ class _DatabaseState extends State<Database> {
     });
 
     try {
-      final results = await Future.wait([
-        apiService.fetchDatabaseStatus(),
-        apiService.fetchDatabaseSystemInfo(),
-        apiService.fetchDatabaseResourceUsage(),
-      ]);
-
+      final overview = await apiService.fetchOverview();
       if (!mounted) return;
       setState(() {
-        _status = results[0] as DatabaseStatus?;
-        _systemInfo = results[1] as DatabaseSystemInfo?;
-        _resourceUsage = results[2] as DatabaseResourceUsage?;
+        _status = overview.databaseStatus.isNotEmpty
+            ? overview.databaseStatus.first
+            : null;
+        _systemInfo = overview.databaseSystemInfo.isNotEmpty
+            ? overview.databaseSystemInfo.first
+            : null;
+        _resourceUsage = overview.databaseResourceUsage.isNotEmpty
+            ? overview.databaseResourceUsage.first
+            : null;
+        _tables = overview.databaseTables;
       });
     } catch (error) {
       if (!mounted) return;
@@ -78,6 +81,7 @@ class _DatabaseState extends State<Database> {
                   if (_status != null) _buildMainCard(colors, theme),
                   if (_resourceUsage != null) _buildResourceCard(theme),
                   if (_systemInfo != null) _buildSystemCard(theme),
+                  if (_tables.isNotEmpty) _buildTablesCard(theme),
                 ],
               ),
             ),
@@ -90,6 +94,9 @@ class _DatabaseState extends State<Database> {
         status.status.toLowerCase().contains('conect') || status.status == 'OK';
     final statusColor = connected ? Colors.green : colors.error;
     final statusText = connected ? 'Conectado' : 'Desconectado';
+    final versionLabel =
+        status.version.isEmpty ? 'Desconocido' : status.version;
+    final portLabel = status.port.isEmpty ? '—' : status.port;
 
     return Card(
       elevation: 1,
@@ -122,8 +129,8 @@ class _DatabaseState extends State<Database> {
                   const SizedBox(height: 6),
                   Text('Estado: $statusText',
                       style: TextStyle(color: statusColor)),
-                  Text('Versión: ${status.version ?? "—"}'),
-                  Text('Puerto: ${status.port ?? "—"}'),
+                  Text('Versión: $versionLabel'),
+                  Text('Puerto: $portLabel'),
                 ],
               ),
             ),
@@ -159,6 +166,9 @@ class _DatabaseState extends State<Database> {
   Widget _buildSystemCard(ThemeData theme) {
     final info = _systemInfo!;
     final uptime = _status?.uptime ?? '—';
+    final distroLabel = info.distro.isEmpty ? '—' : info.distro;
+    final hostLabel = info.hostname.isEmpty ? '—' : info.hostname;
+    final dataPathLabel = info.dataPath.isEmpty ? '—' : info.dataPath;
 
     return Card(
       elevation: 1,
@@ -172,10 +182,51 @@ class _DatabaseState extends State<Database> {
                 style: theme.textTheme.titleMedium
                     ?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
-            Text('Distribución: ${info.distro ?? "—"}'),
-            Text('Hostname: ${info.hostname ?? "—"}'),
-            Text('Ruta de datos: ${info.dataPath ?? "—"}'),
+            Text('Distribución: $distroLabel'),
+            Text('Hostname: $hostLabel'),
+            Text('Ruta de datos: $dataPathLabel'),
             Text('Tiempo activo: $uptime'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTablesCard(ThemeData theme) {
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Tablas principales',
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            for (var i = 0; i < _tables.length; i++) ...[
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  _tables[i].name,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                subtitle: Text(_tables[i].description),
+                trailing: Text(
+                  _tables[i].records?.toString() ?? '—',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              if (i < _tables.length - 1) const Divider(),
+            ],
           ],
         ),
       ),

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:freeradius_app/models/dashboard_models.dart';
+import 'package:freeradius_app/models/overview_models.dart';
+import 'package:freeradius_app/models/pppoe_user.dart';
+import 'package:freeradius_app/models/service_plan.dart';
 import 'package:freeradius_app/services/api_services.dart';
 import 'package:freeradius_app/utilities/error_messages.dart';
 import 'package:freeradius_app/widgets/app_scaffold.dart';
@@ -22,26 +25,61 @@ class _DashboardState extends State<Dashboard> {
   }
 
   Future<_DashboardPayload> _loadData() async {
-    final statsFuture = apiService.fetchDashboardStats();
-    final connectionsFuture = apiService.fetchConnectionData();
-    final distributionFuture = apiService.fetchPlanDistribution();
     final results = await Future.wait([
-      statsFuture,
-      connectionsFuture,
-      distributionFuture,
+      apiService.fetchPppoeUsers(),
+      apiService.fetchOverview(),
+      apiService.fetchPlans(),
     ]);
 
+    final users = results[0] as List<PppoeUser>;
+    final overview = results[1] as OverviewData;
+    final plans = results[2] as List<ServicePlan>;
+
+    final activeClients =
+        users.where((user) => user.status == PppoeStatus.activo).length;
+    final totalClients = users.length;
+    final activeRouters = overview.nasDevices
+        .where(
+          (nas) => nas.status.toLowerCase() == 'activo',
+        )
+        .length;
+    final totalRouters = overview.nasDevices.length;
+    final distribution = _buildPlanDistribution(users);
+    final usedPlans = distribution.length;
+    final totalPlans = plans.length;
+
+    final stats = DashboardStats(
+      activeClients: activeClients,
+      totalClients: totalClients,
+      activeRouters: activeRouters,
+      totalRouters: totalRouters,
+      usedPlans: usedPlans,
+      totalPlans: totalPlans,
+    );
+
     return _DashboardPayload(
-      stats: results[0] as DashboardStats,
-      connections: results[1] as List<ConnectionDataPoint>,
-      distribution: results[2] as List<PlanDistributionItem>,
+      stats: stats,
+      connections: overview.connectionData,
+      distribution: distribution,
     );
   }
 
-  void _reload() {
-    setState(() {
-      _future = _loadData();
-    });
+  List<PlanDistributionItem> _buildPlanDistribution(List<PppoeUser> users) {
+    final counts = <String, int>{};
+    for (final user in users) {
+      if (user.plan.isEmpty) continue;
+      counts.update(user.plan, (value) => value + 1, ifAbsent: () => 1);
+    }
+
+    return counts.entries
+        .map(
+          (entry) => PlanDistributionItem(
+            name: entry.key.replaceAll('_', ' '),
+            value: entry.value,
+          ),
+        )
+        .toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
   }
 
   @override
@@ -110,17 +148,17 @@ class _DashboardView extends StatelessWidget {
       _OverviewCardData(
         icon: HeroIcons.userGroup,
         label: 'Clientes activos',
-        value: '${stats.activeClients}',
+        value: '${stats.activeClients}/${stats.totalClients}',
       ),
       _OverviewCardData(
-        icon: HeroIcons.wifi,
+        icon: HeroIcons.serverStack,
         label: 'Routers activos',
-        value: '${stats.activeRouters}',
+        value: '${stats.activeRouters}/${stats.totalRouters}',
       ),
       _OverviewCardData(
-        icon: HeroIcons.arrowTrendingUp,
-        label: 'Conexiones hoy',
-        value: '${stats.todayConnections}',
+        icon: HeroIcons.cube,
+        label: 'Planes en uso',
+        value: '${stats.usedPlans}/${stats.totalPlans}',
       ),
     ];
 
@@ -216,15 +254,15 @@ class _CompactStatCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         gradient: LinearGradient(
           colors: [
-            colors.primary.withOpacity(0.05),
-            colors.secondaryContainer.withOpacity(0.05),
+            colors.primary.withValues(alpha: 0.05),
+            colors.secondaryContainer.withValues(alpha: 0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: colors.shadow.withOpacity(0.05),
+            color: colors.shadow.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -247,10 +285,14 @@ class _CompactStatCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     card.value,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: colors.onSurface,
-                    ),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: colors.onSurface,
+                        ) ??
+                        theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: colors.onSurface,
+                        ),
                   ),
                 ],
               ),
@@ -296,7 +338,7 @@ class _SectionCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: colors.primary.withOpacity(0.12),
+                    color: colors.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: HeroIcon(icon, color: colors.primary, size: 24),

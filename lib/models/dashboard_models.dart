@@ -1,31 +1,19 @@
 class DashboardStats {
   const DashboardStats({
     required this.activeClients,
-    required this.disconnectedClients,
+    required this.totalClients,
     required this.activeRouters,
-    required this.disconnectedRouters,
-    required this.totalBandwidth,
-    required this.todayConnections,
+    required this.totalRouters,
+    required this.usedPlans,
+    required this.totalPlans,
   });
 
   final int activeClients;
-  final int disconnectedClients;
+  final int totalClients;
   final int activeRouters;
-  final int disconnectedRouters;
-  final String totalBandwidth;
-  final int todayConnections;
-
-  factory DashboardStats.fromJson(Map<String, dynamic> json) {
-    return DashboardStats(
-      activeClients: (json['activeClients'] as num?)?.toInt() ?? 0,
-      disconnectedClients: (json['disconnectedClients'] as num?)?.toInt() ?? 0,
-      activeRouters: (json['activeRouters'] as num?)?.toInt() ?? 0,
-      disconnectedRouters:
-          (json['disconnectedRouters'] as num?)?.toInt() ?? 0,
-      totalBandwidth: json['totalBandwidth'] as String? ?? '0 Mbps',
-      todayConnections: (json['todayConnections'] as num?)?.toInt() ?? 0,
-    );
-  }
+  final int totalRouters;
+  final int usedPlans;
+  final int totalPlans;
 }
 
 class ConnectionDataPoint {
@@ -55,18 +43,18 @@ class PlanDistributionItem {
   const PlanDistributionItem({
     required this.name,
     required this.value,
-    required this.color,
+    this.colorHex,
   });
 
   final String name;
   final int value;
-  final String color;
+  final String? colorHex;
 
   factory PlanDistributionItem.fromJson(Map<String, dynamic> json) {
     return PlanDistributionItem(
       name: json['name'] as String? ?? '',
       value: (json['value'] as num?)?.toInt() ?? 0,
-      color: json['color'] as String? ?? '#cccccc',
+      colorHex: json['color'] as String?,
     );
   }
 }
