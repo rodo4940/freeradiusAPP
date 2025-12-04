@@ -320,7 +320,7 @@ class _UserCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                user.normalizedPlan,
+                'Plan: ${user.normalizedPlan}',
                 style: theme.textTheme.bodyMedium,
               ),
               const SizedBox(height: 4),

@@ -56,6 +56,37 @@ class ApiService {
     return data.map(ServicePlan.fromJson).toList(growable: false);
   }
 
+  Future<void> createPlan(Map<String, dynamic> payload) async {
+    final uri = _buildUri('/plans');
+    final response = await _client.post(
+      uri,
+      headers: _headers,
+      body: jsonEncode(payload),
+    );
+    _throwIfFailed(response);
+  }
+
+  Future<void> updatePlan(
+    String groupname,
+    Map<String, dynamic> payload,
+  ) async {
+    final uri = _buildUri('/plans/$groupname');
+    final response = await _client.put(
+      uri,
+      headers: _headers,
+      body: jsonEncode(payload),
+    );
+    _throwIfFailed(response);
+  }
+
+  Future<void> deletePlan(String groupname) async {
+    final response = await _client.delete(
+      _buildUri('/plans/$groupname'),
+      headers: _headers,
+    );
+    _throwIfFailed(response);
+  }
+
   Future<List<NasDevice>> fetchNasDevices() async {
     final data = await _getList('/nas');
     return data.map(NasDevice.fromJson).toList(growable: false);

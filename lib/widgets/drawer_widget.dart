@@ -22,7 +22,7 @@ class DrawerWidget extends StatelessWidget {
                 children: [
                   HeroIcon(HeroIcons.wifi, size: 64, color: colors.primary),
                   Text(
-                    'infRadius',
+                    'InfRadius',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,

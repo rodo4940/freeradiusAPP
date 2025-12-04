@@ -10,6 +10,7 @@ import 'package:freeradius_app/screens/plans_screen.dart';
 import 'package:freeradius_app/screens/pppoe_users_screen.dart';
 import 'package:freeradius_app/screens/radius_status_screen.dart';
 import 'package:freeradius_app/screens/user_guide_screen.dart';
+import 'package:freeradius_app/utilities/constants.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -22,11 +23,11 @@ class MyApp extends StatelessWidget {
         final initialRoute =
             AuthController.state.value.isAuthenticated ? '/home' : '/login';
         return MaterialApp(
-          // debugShowCheckedModeBanner: false,
+          debugShowCheckedModeBanner: false,
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,
           themeMode: themeMode,
-          title: 'FreeRadius App',
+          title: kAppName,
           initialRoute: initialRoute,
           routes: {
             '/login': (_) => const Login(),
